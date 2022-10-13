@@ -11,7 +11,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserClientUserShortInfo {
+public class UserClientUserShortInfoResponse {
 	private String userProfileImg;
 	private String userEmail;
 	private String userName;

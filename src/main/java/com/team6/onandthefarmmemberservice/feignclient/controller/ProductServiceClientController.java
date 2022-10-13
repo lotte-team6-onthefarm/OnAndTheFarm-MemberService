@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.team6.onandthefarmmemberservice.feignclient.service.ProductServiceClientService;
 import com.team6.onandthefarmmemberservice.feignclient.vo.SellerClientSellerDetailResponse;
-import com.team6.onandthefarmmemberservice.feignclient.vo.UserClientUserShortInfo;
+import com.team6.onandthefarmmemberservice.feignclient.vo.UserClientUserShortInfoResponse;
 
 
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ public class ProductServiceClientController {
 	}
 
 	@GetMapping("/api/user/member-service/username/{user-no}")
-	public UserClientUserShortInfo findUserNameByUserId(@PathVariable("user-no") Long userId){
+	public UserClientUserShortInfoResponse findUserNameByUserId(@PathVariable("user-no") Long userId){
 		return productServiceClientService.findUserNameByUserId(userId);
 	}
 
