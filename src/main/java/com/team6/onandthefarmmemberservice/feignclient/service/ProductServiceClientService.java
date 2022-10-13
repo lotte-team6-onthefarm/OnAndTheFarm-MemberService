@@ -1,9 +1,9 @@
 package com.team6.onandthefarmmemberservice.feignclient.service;
 
 import com.team6.onandthefarmmemberservice.feignclient.vo.SellerClientSellerDetailResponse;
-import com.team6.onandthefarmmemberservice.feignclient.vo.UserClientUserShortInfo;
+import com.team6.onandthefarmmemberservice.feignclient.vo.UserClientUserShortInfoResponse;
 
 public interface ProductServiceClientService {
-	UserClientUserShortInfo findUserNameByUserId(Long userId);
+	UserClientUserShortInfoResponse findUserNameByUserId(Long userId);
 	SellerClientSellerDetailResponse findSellerDetailBySellerId(Long sellerId);
 }

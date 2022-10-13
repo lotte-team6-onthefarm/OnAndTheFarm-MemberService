@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.team6.onandthefarmmemberservice.entity.seller.Seller;
 import com.team6.onandthefarmmemberservice.entity.user.User;
 import com.team6.onandthefarmmemberservice.feignclient.vo.SellerClientSellerDetailResponse;
-import com.team6.onandthefarmmemberservice.feignclient.vo.UserClientUserShortInfo;
+import com.team6.onandthefarmmemberservice.feignclient.vo.UserClientUserShortInfoResponse;
 import com.team6.onandthefarmmemberservice.repository.SellerRepository;
 import com.team6.onandthefarmmemberservice.repository.UserRepository;
 
@@ -24,15 +24,15 @@ public class ProductServiceClientServiceImpl implements ProductServiceClientServ
 		this.sellerRepository = sellerRepository;
 	}
 
-	public UserClientUserShortInfo findUserNameByUserId(Long userId){
+	public UserClientUserShortInfoResponse findUserNameByUserId(Long userId){
 		User user = userRepository.findById(userId).get();
 
-		UserClientUserShortInfo userClientUserShortInfo = UserClientUserShortInfo.builder()
+		UserClientUserShortInfoResponse userClientUserShortInfoResponse = UserClientUserShortInfoResponse.builder()
 				.userProfileImg(user.getUserProfileImg())
 				.userEmail(user.getUserEmail())
 				.userName(user.getUserName())
 				.build();
-		return userClientUserShortInfo;
+		return userClientUserShortInfoResponse;
 	}
 
 	public SellerClientSellerDetailResponse findSellerDetailBySellerId(Long sellerId){
