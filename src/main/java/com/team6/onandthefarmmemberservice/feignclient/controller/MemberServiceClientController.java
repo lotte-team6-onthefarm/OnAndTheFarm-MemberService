@@ -1,5 +1,6 @@
 package com.team6.onandthefarmmemberservice.feignclient.controller;
 
+import com.team6.onandthefarmmemberservice.feignclient.service.MemberServiceClientService;
 import com.team6.onandthefarmmemberservice.feignclient.vo.UserClientResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MemberServiceClientController {
 
-    private final 
+    private final MemberServiceClientService memberServiceClientService;
 
     /**
      * 유저ID를 이용해서 유저 정보를 가져오는 것
@@ -19,6 +20,6 @@ public class MemberServiceClientController {
      */
     @GetMapping("/api/user/member-service/user/{user-no}")
     public UserClientResponse findByUserId(@PathVariable("user-no") Long userId){
-
+        return memberServiceClientService.findByUserId(userId);
     }
 }

@@ -45,4 +45,10 @@ public class UserClientResponse {
     private String userAppleNumber;
 
     private String userGoogleNumber;
+
+    private Integer userFollowingCount;
+
+    private Integer userFollowerCount;
+
+    private String userProfileImg;
 }
