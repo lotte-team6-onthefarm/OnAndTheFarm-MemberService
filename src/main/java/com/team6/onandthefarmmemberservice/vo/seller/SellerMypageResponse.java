@@ -17,4 +17,8 @@ public class SellerMypageResponse {
     private List<Integer> dayPrices;
 
     private Integer totalPrice;
+
+    private Integer totalOrderCount;
+
+    private List<Integer> dayOrderCount;
 }

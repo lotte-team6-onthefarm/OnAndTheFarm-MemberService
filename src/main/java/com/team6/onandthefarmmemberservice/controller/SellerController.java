@@ -18,6 +18,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.security.Principal;
@@ -53,18 +54,46 @@ public class SellerController {
     @GetMapping("/mypage/info")
     @ApiOperation(value = "셀러 회원 정보 조회")
     public ResponseEntity<SellerInfoResponse> findBySellerId(@ApiIgnore Principal principal){
-        SellerInfoResponse response = sellerService.findByUserId(Long.valueOf(principal.getName()));
+
+        if(principal == null){
+            BaseResponse baseResponse = BaseResponse.builder()
+                    .httpStatus(HttpStatus.FORBIDDEN)
+                    .message("no authorization")
+                    .build();
+            return new ResponseEntity(baseResponse, HttpStatus.BAD_REQUEST);
+        }
+
+        String[] principalInfo = principal.getName().split(" ");
+        Long sellerId = Long.parseLong(principalInfo[0]);
+
+        SellerInfoResponse response = sellerService.findByUserId(sellerId);
         return new ResponseEntity(response,HttpStatus.OK);
     }
 
     @PutMapping("/mypage/info")
     @ApiOperation(value = "셀러 회원 정보 수정")
-    public ResponseEntity<BaseResponse> updateSeller(@ApiIgnore Principal principal,
-                                                     @RequestBody SellerUpdateRequest sellerUpdateRequest){
+    public ResponseEntity<BaseResponse> updateSeller(
+            @ApiIgnore Principal principal,
+            @RequestPart(value = "images", required = false) List<MultipartFile> profile,
+            @RequestPart(value = "data", required = false) SellerUpdateRequest sellerUpdateRequest)
+            throws Exception{
+
+        if(principal == null){
+            BaseResponse baseResponse = BaseResponse.builder()
+                    .httpStatus(HttpStatus.FORBIDDEN)
+                    .message("no authorization")
+                    .build();
+            return new ResponseEntity(baseResponse, HttpStatus.BAD_REQUEST);
+        }
+
+        String[] principalInfo = principal.getName().split(" ");
+        Long sellerId = Long.parseLong(principalInfo[0]);
+
         ModelMapper modelMapper = new ModelMapper();
         modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
         SellerDto sellerDto = modelMapper.map(sellerUpdateRequest,SellerDto.class);
-        sellerService.updateByUserId(Long.valueOf(principal.getName()),sellerDto);
+        sellerDto.setProfile(profile.get(0));
+        sellerService.updateByUserId(sellerId, sellerDto);
 
         BaseResponse response = BaseResponse.builder()
                 .httpStatus(HttpStatus.OK)
@@ -126,6 +155,46 @@ public class SellerController {
         return new ResponseEntity(responseOk,HttpStatus.OK);
     }
 
+    @PostMapping("/search/id")
+    @ApiOperation(value = "셀러 아이디 찾기")
+    public ResponseEntity<BaseResponse> searchSellerId(@RequestBody Map<String,String> map){
+        String sellerEmail = map.get("sellerEmail");
+        String phone = map.get("phone");
+        Boolean result = sellerService.searchSellerId(sellerEmail,phone);
+        if(result){
+            BaseResponse response = BaseResponse.builder()
+                    .httpStatus(HttpStatus.OK)
+                    .message("OK")
+                    .build();
+            return new ResponseEntity(response,HttpStatus.OK);
+        }
+        BaseResponse response = BaseResponse.builder()
+                .httpStatus(HttpStatus.BAD_REQUEST)
+                .message("정보 없음")
+                .build();
+        return new ResponseEntity(response,HttpStatus.BAD_REQUEST);
+    }
+
+    @PostMapping("/search/passwd")
+    @ApiOperation(value = "셀러 비밀번호 찾기")
+    public ResponseEntity<BaseResponse> searchSellerPasswd(@RequestBody Map<String,String> map){
+        String sellerEmail = map.get("sellerEmail");
+        String phone = map.get("phone");
+        Boolean result = sellerService.searchSellerId(sellerEmail,phone);
+        if(result){
+            BaseResponse response = BaseResponse.builder()
+                    .httpStatus(HttpStatus.OK)
+                    .message("OK")
+                    .build();
+            return new ResponseEntity(response,HttpStatus.OK);
+        }
+        BaseResponse response = BaseResponse.builder()
+                .httpStatus(HttpStatus.BAD_REQUEST)
+                .message("정보 없음")
+                .build();
+        return new ResponseEntity(response,HttpStatus.BAD_REQUEST);
+    }
+
     @PostMapping("/passwd")
     @ApiOperation(value = "셀러 비밀번호 변경")
     public ResponseEntity<BaseResponse> changePassword(@RequestBody SellerPasswordRequest sellerPasswordRequest){
@@ -185,10 +254,22 @@ public class SellerController {
 
 //    @GetMapping("/QnA")
 //    @ApiOperation(value = "셀러의 전체 질의 조회")
-//    public ResponseEntity<BaseResponse<List<SellerProductQnaResponse>>> findSellerQnA (
-//            @ApiIgnore Principal principal){
-//        List<SellerProductQnaResponse> productQnas
-//                = sellerService.findSellerQnA(Long.valueOf(principal.getName()));
+//    public ResponseEntity<BaseResponse<SellerProductQnaResponseResult>> findSellerQnA (
+//            @ApiIgnore Principal principal, @RequestParam String pageNumber){
+//
+//        if(principal == null){
+//            BaseResponse baseResponse = BaseResponse.builder()
+//                    .httpStatus(HttpStatus.FORBIDDEN)
+//                    .message("no authorization")
+//                    .build();
+//            return new ResponseEntity(baseResponse, HttpStatus.BAD_REQUEST);
+//        }
+//
+//        String[] principalInfo = principal.getName().split(" ");
+//        Long sellerId = Long.parseLong(principalInfo[0]);
+//
+//        SellerProductQnaResponseResult productQnas
+//                = sellerService.findSellerQnA(sellerId,Integer.valueOf(pageNumber));
 //        BaseResponse response = BaseResponse.builder()
 //                .httpStatus(HttpStatus.OK)
 //                .message("OK")
@@ -216,14 +297,29 @@ public class SellerController {
 //    @ApiOperation(value = "셀러의 메인페이지 조회")
 //    public ResponseEntity<BaseResponse<SellerMypageResponse>> findSellerMypage(
 //            @ApiIgnore Principal principal, @RequestParam Map<String,String> map){
+//
+//        if(principal == null){
+//            BaseResponse baseResponse = BaseResponse.builder()
+//                    .httpStatus(HttpStatus.FORBIDDEN)
+//                    .message("no authorization")
+//                    .build();
+//            return new ResponseEntity(baseResponse, HttpStatus.BAD_REQUEST);
+//        }
+//
+//        String[] principalInfo = principal.getName().split(" ");
+//        Long sellerId = Long.parseLong(principalInfo[0]);
+//
+//        String startDate = map.get("startDate").substring(0,10)+" 00:00:00";
+//        String endDate = map.get("endDate").substring(0,10)+" 23:59:59";
+//
 //        ModelMapper modelMapper = new ModelMapper();
 //        modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
 //        SellerMypageRequest sellerMypageRequest = SellerMypageRequest.builder()
-//                .startDate(map.get("startDate"))
-//                .endDate(map.get("endDate"))
+//                .startDate(startDate)
+//                .endDate(endDate)
 //                .build();
 //        SellerMypageDto sellerMypageDto = modelMapper.map(sellerMypageRequest, SellerMypageDto.class);
-//        sellerMypageDto.setSellerId(Long.valueOf(principal.getName()));
+//        sellerMypageDto.setSellerId(sellerId);
 //
 //        SellerMypageResponse mypageResponse = sellerService.findSellerMypage(sellerMypageDto);
 //

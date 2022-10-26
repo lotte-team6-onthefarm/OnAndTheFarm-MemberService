@@ -12,5 +12,5 @@ public interface MailService {
     boolean checkAuthKey(Map<String, String> map) ;
 
     //인증메일 보내기
-    public String sendAuthMail(String email) ;
+    String sendAuthMail(String email) ;
 }

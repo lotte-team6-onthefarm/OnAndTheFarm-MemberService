@@ -18,13 +18,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity // 시큐리티 활성화 -> 기본 스프링 필터체인에 등록
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private final UserRepository userRepository;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired
-    public SecurityConfig(UserRepository userRepository,
-                          JwtAuthenticationFilter jwtAuthenticationFilter){
-        this.userRepository = userRepository;
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter){
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
@@ -37,8 +34,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 토큰 기반 인증이므로 세션 사용 하지않음
                 .and()
                 .authorizeRequests()
-                .antMatchers("/api/user/login", "/api/seller/login", "/api/seller/signup", "/api/seller/email", "/api/seller/emailConfirm").permitAll()
-                //.antMatchers("/api/user/product/list/**", "/api/user/product/{\\d+}").permitAll()
+                .antMatchers("/", "/**").permitAll()
                 .antMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
                 .antMatchers("/api/seller/**").hasRole("ADMIN")
                 .anyRequest().permitAll()
@@ -51,7 +47,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.addAllowedOrigin("http://localhost:3000");
+        //configuration.addAllowedOrigin("http://54.180.119.61:3000");
+        configuration.addAllowedOriginPattern("*");
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
         configuration.setAllowCredentials(true);

@@ -2,6 +2,7 @@ package com.team6.onandthefarmmemberservice.dto.seller;
 
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
 
 @Builder
 @Slf4j
@@ -19,4 +20,5 @@ public class SellerDto {
     private String name;
     private String shopName;
     private String businessNumber;
+    private MultipartFile profile;
 }

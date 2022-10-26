@@ -16,4 +16,5 @@ public class SellerInfoResponse {
     private String name;
     private String businessNumber;
     private String registerDate;
+    private String sellerProfileImg;
 }
