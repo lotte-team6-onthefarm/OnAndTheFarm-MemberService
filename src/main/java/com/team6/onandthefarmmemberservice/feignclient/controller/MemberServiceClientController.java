@@ -19,7 +19,7 @@ public class MemberServiceClientController {
      * @param userId
      * @return
      */
-    @GetMapping("/api/user/user/member-service/{user-no}")
+    @GetMapping("/api/user/members/member-service/{user-no}")
     public UserVo findByUserId(@PathVariable("user-no") Long userId){
         return memberServiceClientService.findByUserId(userId);
     }

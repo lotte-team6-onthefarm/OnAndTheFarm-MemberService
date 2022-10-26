@@ -23,12 +23,12 @@ public class ProductServiceClientController {
 		this.productServiceClientService = productServiceClientService;
 	}
 
-	@GetMapping("/api/user/user/member-service/{user-no}")
+	@GetMapping("/api/user/members/member-service/username/{user-no}")
 	public UserClientUserShortInfoResponse findUserNameByUserId(@PathVariable("user-no") Long userId){
 		return productServiceClientService.findUserNameByUserId(userId);
 	}
 
-	@GetMapping("/api/seller/seller/member-service/{seller-no}")
+	@GetMapping("/api/seller/members/member-service/seller/{seller-no}")
 	public SellerClientSellerDetailResponse findBySellerId(@PathVariable("seller-no") Long sellerId){
 		return productServiceClientService.findSellerDetailBySellerId(sellerId);
 	}

@@ -27,7 +27,7 @@ import java.util.Map;
 
 @RestController
 @Slf4j
-@RequestMapping("/api/seller")
+@RequestMapping("/api/seller/members")
 @Api(value = "셀러",description = "QNA status\n" +
         "     * waiting(qna0) : 답변 대기\n" +
         "     * completed(qna1) : 답변 완료\n" +
