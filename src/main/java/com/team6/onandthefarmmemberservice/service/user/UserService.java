@@ -36,12 +36,4 @@ public interface UserService {
 
     MemberProfileResponse getMemberProfile(MemberProfileDto memberProfileDto);
 
-
-//    Boolean createProductQnA(UserQnaDto userQnaDto);
-//
-//    ProductQnAResultResponse findUserQna(Long userId, Integer pageNum);
-//
-//    Boolean updateUserQna(UserQnaUpdateDto userQnaUpdateDto);
-//
-//    Boolean deleteUserQna(Long productQnaId);
 }
