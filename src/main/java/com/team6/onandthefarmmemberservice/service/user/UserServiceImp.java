@@ -48,12 +48,6 @@ public class UserServiceImp implements UserService {
 
 	private final SellerRepository sellerRepository;
 
-//	private final ProductQnaRepository productQnaRepository;
-//
-//	private final ProductQnaAnswerRepository productQnaAnswerRepository;
-//
-//	private final ProductRepository productRepository;
-
 	private final FollowingRepository followingRepository;
 
 	private final KakaoOAuth2 kakaoOAuth2;
@@ -73,9 +67,6 @@ public class UserServiceImp implements UserService {
 						  FollowingRepository followingRepository,
 						  DateUtils dateUtils,
 						  Environment env,
-//						  ProductQnaRepository productQnaRepository,
-//						  ProductQnaAnswerRepository productQnaAnswerRepository,
-//						  ProductRepository productRepository,
 						  KakaoOAuth2 kakaoOAuth2,
 						  NaverOAuth2 naverOAuth2,
 						  JwtTokenUtil jwtTokenUtil,
@@ -85,9 +76,6 @@ public class UserServiceImp implements UserService {
 		this.followingRepository = followingRepository;
 		this.dateUtils = dateUtils;
 		this.env = env;
-//		this.productQnaRepository = productQnaRepository;
-//		this.productQnaAnswerRepository=productQnaAnswerRepository;
-//		this.productRepository = productRepository;
 		this.kakaoOAuth2 = kakaoOAuth2;
 		this.naverOAuth2 = naverOAuth2;
 		this.jwtTokenUtil = jwtTokenUtil;
@@ -589,112 +577,5 @@ public class UserServiceImp implements UserService {
 		memberFollowResult.setMemberFollowListResponseList(responseList);
 		return memberFollowResult;
 	}
-
-//	@Override
-//	public Boolean createProductQnA(UserQnaDto userQnaDto) {
-//		Optional<User> user = userRepository.findById(userQnaDto.getUserId());
-//		Optional<Product> product = productRepository.findById(userQnaDto.getProductId());
-//		log.info("product 정보  :  " + product.get().toString());
-//		ProductQna productQna = ProductQna.builder()
-//				.product(product.get())
-//				.user(user.get())
-//				.productQnaContent(userQnaDto.getProductQnaContent())
-//				.productQnaCreatedAt(dateUtils.transDate(env.getProperty("dateutils.format")))
-//				.productQnaStatus("waiting")
-//				.seller(product.get().getSeller())
-//				.build();
-//		ProductQna newQna = productQnaRepository.save(productQna);
-//		if (newQna == null) {
-//			return Boolean.FALSE;
-//		}
-//		return Boolean.TRUE;
-//	}
-//
-//	@Override
-//	public ProductQnAResultResponse findUserQna(Long userId, Integer pageNum) {
-//		ModelMapper modelMapper = new ModelMapper();
-//		modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
-//
-//		List<ProductQnAResponse> responses = new ArrayList<>();
-//
-//		Optional<User> user = userRepository.findById(userId);
-//		if (user.isPresent()) {
-//			List<ProductQna> productQnas = productQnaRepository.findByUser(user.get());
-//
-//			for (ProductQna productQna : productQnas) {
-//				ProductQnAResponse response = modelMapper.map(productQna, ProductQnAResponse.class);
-//				if(response.getProductQnaStatus().equals("deleted")) continue;
-//				if(response.getProductQnaStatus().equals("completed")){
-//					String answer =
-//							productQnaAnswerRepository
-//									.findByProductQna(productQna)
-//									.getProductQnaAnswerContent();
-//					response.setProductSellerAnswer(answer);
-//				}
-//				response.setUserName(user.get().getUserName());
-//				response.setUserProfileImg(user.get().getUserProfileImg());
-//				responses.add(response);
-//			}
-//		}
-//
-//		ProductQnAResultResponse resultResponse = new ProductQnAResultResponse();
-//
-//		responses.sort((o1, o2) -> {
-//			int result = o2.getProductQnaCreatedAt().compareTo(o1.getProductQnaCreatedAt());
-//			return result;
-//		});
-//
-//		int startIndex = pageNum*pageContentNumber;
-//
-//		int size = responses.size();
-//
-//		if(size<startIndex+pageContentNumber){
-//			resultResponse.setResponses(responses.subList(startIndex,size));
-//			resultResponse.setCurrentPageNum(pageNum);
-//			if(size%pageContentNumber!=0){
-//				resultResponse.setTotalPageNum((size/pageContentNumber)+1);
-//			}
-//			else{
-//				resultResponse.setTotalPageNum(size/pageContentNumber);
-//			}
-//			return resultResponse;
-//		}
-//
-//		resultResponse.setResponses(responses.subList(startIndex,startIndex+pageContentNumber));
-//		resultResponse.setCurrentPageNum(pageNum);
-//		if(size%pageContentNumber!=0){
-//			resultResponse.setTotalPageNum((size/pageContentNumber)+1);
-//		}
-//		else{
-//			resultResponse.setTotalPageNum(size/pageContentNumber);
-//		}
-//		return resultResponse;
-//	}
-//
-//	/**
-//	 * 유저의 질의를 수정하는 메서드
-//	 * @param userQnaUpdateDto
-//	 * @return
-//	 */
-//	@Override
-//	public Boolean updateUserQna(UserQnaUpdateDto userQnaUpdateDto) {
-//		Optional<ProductQna> productQna = productQnaRepository.findById(userQnaUpdateDto.getProductQnaId());
-//		productQna.get().setProductQnaContent(userQnaUpdateDto.getProductQnaContent());
-//		productQna.get().setProductQnaModifiedAt(dateUtils.transDate(env.getProperty("dateutils.format")));
-//		if (productQna.get().getProductQnaContent().equals(userQnaUpdateDto.getProductQnaContent())) {
-//			return Boolean.TRUE;
-//		}
-//		return Boolean.FALSE;
-//	}
-//
-//	@Override
-//	public Boolean deleteUserQna(Long productQnaId) {
-//		Optional<ProductQna> productQna = productQnaRepository.findById(productQnaId);
-//		productQna.get().setProductQnaStatus("deleted");
-//		if (productQna.get().getProductQnaStatus().equals("deleted")) {
-//			return Boolean.TRUE;
-//		}
-//		return Boolean.FALSE;
-//	}
 
 }
