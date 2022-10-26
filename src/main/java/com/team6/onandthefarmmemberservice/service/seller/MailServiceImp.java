@@ -23,7 +23,8 @@ import java.util.Random;
 @Service
 @Transactional
 @Slf4j
-public class MailServiceImpl implements MailService{
+public class MailServiceImp implements MailService{
+
     private JavaMailSenderImpl mailSender;
 
     private EmailRepository emailRepository;
@@ -32,11 +33,10 @@ public class MailServiceImpl implements MailService{
 
     private Environment env;
 
-
     private int size;
 
     @Autowired
-    public MailServiceImpl(JavaMailSenderImpl mailSender, EmailRepository emailRepository, DateUtils dateUtils, Environment env) {
+    public MailServiceImp(JavaMailSenderImpl mailSender, EmailRepository emailRepository,DateUtils dateUtils,Environment env) {
         this.mailSender = mailSender;
         this.emailRepository=emailRepository;
         this.dateUtils=dateUtils;
@@ -47,7 +47,8 @@ public class MailServiceImpl implements MailService{
      * 이메일 인증 row 추가
      * @param emailDto
      */
-    public void save(EmailDto emailDto){
+    @Override
+    public void save(EmailDto emailDto) {
         ModelMapper modelMapper = new ModelMapper();
         modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
         EmailConfirmation email = EmailConfirmation.builder()
@@ -58,14 +59,13 @@ public class MailServiceImpl implements MailService{
         emailRepository.save(email);
     }
 
-
     /**
      * 시간 5분 체크와 최근 1건에 대한 인증
      * @param map(authKey / email)
      * @return true: 인증완료 false: 인증실패
      */
+    @Override
     public boolean checkAuthKey(Map<String, String> map) {
-
         String AuthKey = map.get("authKey");
         String email = map.get("email");
         EmailConfirmation emailConfirmation = emailRepository.findByEmailIdAndAuthKey(email,AuthKey);
@@ -131,6 +131,7 @@ public class MailServiceImpl implements MailService{
     }
 
     //인증메일 보내기
+    @Override
     public String sendAuthMail(String email) {
         //6자리 난수 인증번호 생성
         String authKey = getKey(6);

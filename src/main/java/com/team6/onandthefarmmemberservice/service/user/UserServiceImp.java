@@ -1,7 +1,7 @@
 package com.team6.onandthefarmmemberservice.service.user;
 
-
 import com.team6.onandthefarmmemberservice.dto.following.MemberFollowingDto;
+import com.team6.onandthefarmmemberservice.dto.following.MemberProfileDto;
 import com.team6.onandthefarmmemberservice.dto.user.UserInfoDto;
 import com.team6.onandthefarmmemberservice.dto.user.UserLoginDto;
 import com.team6.onandthefarmmemberservice.entity.following.Following;
@@ -16,10 +16,12 @@ import com.team6.onandthefarmmemberservice.security.oauth.dto.OAuth2UserDto;
 import com.team6.onandthefarmmemberservice.security.oauth.provider.KakaoOAuth2;
 import com.team6.onandthefarmmemberservice.security.oauth.provider.NaverOAuth2;
 import com.team6.onandthefarmmemberservice.utils.DateUtils;
+import com.team6.onandthefarmmemberservice.utils.S3Upload;
 import com.team6.onandthefarmmemberservice.vo.following.*;
 import com.team6.onandthefarmmemberservice.vo.user.UserInfoResponse;
 import com.team6.onandthefarmmemberservice.vo.user.UserTokenResponse;
 import lombok.extern.slf4j.Slf4j;
+
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -38,15 +42,17 @@ import java.util.Optional;
 @Slf4j
 public class UserServiceImp implements UserService {
 
+	private final int pageContentNumber = 8;
+
 	private final UserRepository userRepository;
 
 	private final SellerRepository sellerRepository;
 
-	//private final ProductQnaRepository productQnaRepository;
-
-	//private final ProductQnaAnswerRepository productQnaAnswerRepository;
-
-	//private final ProductRepository productRepository;
+//	private final ProductQnaRepository productQnaRepository;
+//
+//	private final ProductQnaAnswerRepository productQnaAnswerRepository;
+//
+//	private final ProductRepository productRepository;
 
 	private final FollowingRepository followingRepository;
 
@@ -59,34 +65,34 @@ public class UserServiceImp implements UserService {
 
 	private final Environment env;
 
+	private final S3Upload s3Upload;
+
 	@Autowired
 	public UserServiceImp(UserRepository userRepository,
-			SellerRepository sellerRepository,
-			FollowingRepository followingRepository,
-			DateUtils dateUtils,
-			Environment env,
-			KakaoOAuth2 kakaoOAuth2,
-			NaverOAuth2 naverOAuth2,
-			JwtTokenUtil jwtTokenUtil)
-		  //ProductQnaRepository productQnaRepository,
-		  //ProductQnaAnswerRepository productQnaAnswerRepository,
-		  //ProductRepository productRepository)
-		{
+						  SellerRepository sellerRepository,
+						  FollowingRepository followingRepository,
+						  DateUtils dateUtils,
+						  Environment env,
+//						  ProductQnaRepository productQnaRepository,
+//						  ProductQnaAnswerRepository productQnaAnswerRepository,
+//						  ProductRepository productRepository,
+						  KakaoOAuth2 kakaoOAuth2,
+						  NaverOAuth2 naverOAuth2,
+						  JwtTokenUtil jwtTokenUtil,
+						  S3Upload s3Upload) {
 		this.userRepository = userRepository;
 		this.sellerRepository = sellerRepository;
 		this.followingRepository = followingRepository;
 		this.dateUtils = dateUtils;
 		this.env = env;
-		this.kakaoOAuth2 = kakaoOAuth2;
-		this.naverOAuth2 = naverOAuth2;
-		this.jwtTokenUtil = jwtTokenUtil;
 //		this.productQnaRepository = productQnaRepository;
 //		this.productQnaAnswerRepository=productQnaAnswerRepository;
 //		this.productRepository = productRepository;
-
+		this.kakaoOAuth2 = kakaoOAuth2;
+		this.naverOAuth2 = naverOAuth2;
+		this.jwtTokenUtil = jwtTokenUtil;
+		this.s3Upload=s3Upload;
 	}
-
-
 
 	@Override
 	public UserTokenResponse login(UserLoginDto userLoginDto) {
@@ -125,6 +131,10 @@ public class UserServiceImp implements UserService {
 							.role("ROLE_USER")
 							.provider(provider)
 							.userNaverNumber(userInfo.getNaverId())
+							.userFollowerCount(0)
+							.userFollowingCount(0)
+							.userProfileImg("https://lotte-06-s3-test.s3.ap-northeast-2.amazonaws.com/profile/user/basic_profile.png")
+							.userRegisterDate(dateUtils.transDate(env.getProperty("dateutils.format")))
 							.build();
 					user = userRepository.save(newUser);
 				}
@@ -159,6 +169,10 @@ public class UserServiceImp implements UserService {
 							.role("ROLE_USER")
 							.provider(provider)
 							.userKakaoNumber(userInfo.getKakaoId())
+							.userFollowerCount(0)
+							.userFollowingCount(0)
+							.userProfileImg("https://lotte-06-s3-test.s3.ap-northeast-2.amazonaws.com/profile/user/basic_profile.png")
+							.userRegisterDate(dateUtils.transDate(env.getProperty("dateutils.format")))
 							.build();
 					user = userRepository.save(newUser);
 				}
@@ -190,20 +204,14 @@ public class UserServiceImp implements UserService {
 	}
 
 	@Override
-	public Long registerUserInfo(UserInfoDto userInfoDto) {
-		Optional<User> user = userRepository.findById(userInfoDto.getUserId());
+	public Boolean loginPhoneConfirm(String phone){
+		Optional<User> user = userRepository.findByUserPhone(phone);
 
-		user.get().setUserName(userInfoDto.getUserName());
-		user.get().setUserPhone(userInfoDto.getUserPhone());
-		user.get().setUserZipcode(userInfoDto.getUserZipcode());
-		user.get().setUserAddress(userInfoDto.getUserAddress());
-		user.get().setUserAddressDetail(userInfoDto.getUserAddressDetail());
-		user.get().setUserBirthday(userInfoDto.getUserBirthday());
-		user.get().setUserSex(userInfoDto.getUserSex());
-		user.get().setUserFollowerCount(0);
-		user.get().setUserFollowingCount(0);
+		if(user.isPresent()){
+			return false;
+		}
 
-		return user.get().getUserId();
+		return true;
 	}
 
 	@Override
@@ -212,8 +220,13 @@ public class UserServiceImp implements UserService {
 	}
 
 	@Override
-	public Long updateUserInfo(UserInfoDto userInfoDto) {
+	public Long updateUserInfo(UserInfoDto userInfoDto) throws IOException {
 		Optional<User> user = userRepository.findById(userInfoDto.getUserId());
+
+		if(userInfoDto.getProfile()!=null){
+			String url = s3Upload.profileUserUpload(userInfoDto.getProfile());
+			user.get().setUserProfileImg(url);
+		}
 
 		user.get().setUserName(userInfoDto.getUserName());
 		user.get().setUserPhone(userInfoDto.getUserPhone());
@@ -223,9 +236,11 @@ public class UserServiceImp implements UserService {
 		user.get().setUserBirthday(userInfoDto.getUserBirthday());
 		user.get().setUserSex(userInfoDto.getUserSex());
 
+
 		return user.get().getUserId();
 	}
 
+	@Override
 	public UserInfoResponse findUserInfo(Long userId) {
 		ModelMapper modelMapper = new ModelMapper();
 		modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
@@ -236,75 +251,6 @@ public class UserServiceImp implements UserService {
 
 		return response;
 	}
-
-//	public Boolean createProductQnA(UserQnaDto userQnaDto) {
-//		Optional<User> user = userRepository.findById(userQnaDto.getUserId());
-//		Optional<Product> product = productRepository.findById(userQnaDto.getProductId());
-//		log.info("product 정보  :  " + product.get().toString());
-//		ProductQna productQna = ProductQna.builder()
-//				.product(product.get())
-//				.user(user.get())
-//				.productQnaContent(userQnaDto.getProductQnaContent())
-//				.productQnaCreatedAt(dateUtils.transDate(env.getProperty("dateutils.format")))
-//				.productQnaStatus("waiting")
-//				.seller(product.get().getSeller())
-//				.build();
-//		ProductQna newQna = productQnaRepository.save(productQna);
-//		if (newQna == null) {
-//			return Boolean.FALSE;
-//		}
-//		return Boolean.TRUE;
-//	}
-//
-//	public List<ProductQnAResponse> findUserQna(Long userId) {
-//		ModelMapper modelMapper = new ModelMapper();
-//		modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
-//
-//		List<ProductQnAResponse> responses = new ArrayList<>();
-//
-//		Optional<User> user = userRepository.findById(userId);
-//		if (user.isPresent()) {
-//			List<ProductQna> productQnas = productQnaRepository.findByUser(user.get());
-//
-//			for (ProductQna productQna : productQnas) {
-//				ProductQnAResponse response = modelMapper.map(productQna, ProductQnAResponse.class);
-//				if(response.getProductQnaStatus().equals("completed")){
-//					String answer =
-//							productQnaAnswerRepository
-//									.findByProductQna(productQna)
-//									.getProductQnaAnswerContent();
-//					response.setProductSellerAnswer(answer);
-//				}
-//				responses.add(response);
-//			}
-//		}
-//
-//		return responses;
-//	}
-//
-//	/**
-//	 * 유저의 질의를 수정하는 메서드
-//	 * @param userQnaUpdateDto
-//	 * @return
-//	 */
-//	public Boolean updateUserQna(UserQnaUpdateDto userQnaUpdateDto) {
-//		Optional<ProductQna> productQna = productQnaRepository.findById(userQnaUpdateDto.getProductQnaId());
-//		productQna.get().setProductQnaContent(userQnaUpdateDto.getProductQnaContent());
-//		productQna.get().setProductQnaModifiedAt(dateUtils.transDate(env.getProperty("dateutils.format")));
-//		if (productQna.get().getProductQnaContent().equals(userQnaUpdateDto.getProductQnaContent())) {
-//			return Boolean.TRUE;
-//		}
-//		return Boolean.FALSE;
-//	}
-//
-//	public Boolean deleteUserQna(Long productQnaId) {
-//		Optional<ProductQna> productQna = productQnaRepository.findById(productQnaId);
-//		productQna.get().setProductQnaStatus("deleted");
-//		if (productQna.get().getProductQnaStatus().equals("deleted")) {
-//			return Boolean.TRUE;
-//		}
-//		return Boolean.FALSE;
-//	}
 
 	@Override
 	public Long addFollowList(MemberFollowingDto memberFollowingDto) {
@@ -399,100 +345,356 @@ public class UserServiceImp implements UserService {
 	}
 
 	@Override
-	public MemberFollowCountResponse getFollowingCount(MemberFollowCountRequest memberFollowCountRequest) {
-		User user;
-		Seller seller;
-		MemberFollowCountResponse memberFollowCountResponse = null;
-		Long memberId = memberFollowCountRequest.getMemberId();
-		String memberRole = memberFollowCountRequest.getMemberRole();
+	public MemberFollowResult getFollowerList(MemberFollowerListRequest memberFollowerListRequest){
 
-		if (memberRole.equals("user")) {
-			user = userRepository.findById(memberId).get();
+		Long memberId = memberFollowerListRequest.getMemberId();
+		Long loginMemberId = memberFollowerListRequest.getLoginMemberId();
+		String loginMemberRole = memberFollowerListRequest.getLoginMemberRole();
+		List<Following> followerList = followingRepository.findFollowingIdByFollowerId(memberId);
 
-			memberFollowCountResponse = MemberFollowCountResponse.builder().
-					memberId(user.getUserId())
-					.followingCount(user.getUserFollowingCount())
-					.followerCount(user.getUserFollowerCount()).
-					build();
-			
-		} else if (memberRole.equals("seller")) {
-			seller = sellerRepository.findById(memberId).get();
+		int startIndex = memberFollowerListRequest.getPageNumber() * pageContentNumber;
+		int size = followerList.size();
 
-			memberFollowCountResponse = MemberFollowCountResponse.builder().
-					memberId(seller.getSellerId())
-					.followingCount(seller.getSellerFollowingCount())
-					.followerCount(seller.getSellerFollowerCount()).
-					build();
+		MemberFollowResult memberFollowResult = getResponseForFollower(size, startIndex, followerList, loginMemberId, loginMemberRole);
+		memberFollowResult.setCurrentPageNum(memberFollowerListRequest.getPageNumber());
+		memberFollowResult.setTotalElementNum(size);
+		if(size%pageContentNumber==0){
+			memberFollowResult.setTotalPageNum(size/pageContentNumber);
 		}
-		
-		return memberFollowCountResponse;
+		else{
+			memberFollowResult.setTotalPageNum((size/pageContentNumber)+1);
+		}
+
+		return memberFollowResult;
 	}
 
 	@Override
-	public List<MemberFollowerListResponse> getFollowerList(MemberFollowerListRequest memberFollowerListRequest){
-		User user;
-		Seller seller;
-		Long memberId = memberFollowerListRequest.getMemberId();
-		List<MemberFollowerListResponse> followerResponseList = new ArrayList<>();
-		List<Following> followerList = followingRepository.findFollowingIdByFollowerId(memberId);
+	public MemberFollowResult getFollowingList(MemberFollowingListRequest memberFollowingListRequest){
 
-			for (Following following : followerList) {
+		Long memberId = memberFollowingListRequest.getMemberId();
+		Long loginMemberId = memberFollowingListRequest.getLoginMemberId();
+		String loginMemberRole = memberFollowingListRequest.getLoginMemberRole();
+		List<Following> followingList = followingRepository.findFollowerIdByFollowingId(memberId);
+
+		int startIndex = memberFollowingListRequest.getPageNumber() * pageContentNumber;
+		int size = followingList.size();
+
+		MemberFollowResult memberFollowResult = getResponseForFollowing(size, startIndex, followingList, loginMemberId, loginMemberRole);
+		memberFollowResult.setCurrentPageNum(memberFollowingListRequest.getPageNumber());
+		memberFollowResult.setTotalElementNum(size);
+		if(size%pageContentNumber==0){
+			memberFollowResult.setTotalPageNum(size/pageContentNumber);
+		}
+		else{
+			memberFollowResult.setTotalPageNum((size/pageContentNumber)+1);
+		}
+
+		return memberFollowResult;
+	}
+
+	@Override
+	public MemberProfileResponse getMemberProfile(MemberProfileDto memberProfileDto){
+		Long memberId = memberProfileDto.getMemberId();
+		String memberRole = memberProfileDto.getMemberRole();
+
+		MemberProfileResponse memberProfileResponse = null;
+		if(memberRole.equals("user")){
+			User user = userRepository.findById(memberId).get();
+
+			String userName = user.getUserName();
+			String userProfileImage = user.getUserProfileImg();
+
+			memberProfileResponse = MemberProfileResponse.builder()
+					.memberName(userName)
+					.memberProfileImage(userProfileImage)
+					.followingCount(user.getUserFollowingCount())
+					.followerCount(user.getUserFollowerCount())
+					.build();
+		}
+		else if (memberRole.equals("seller")){
+			Seller seller = sellerRepository.findById(memberId).get();
+			memberProfileResponse = MemberProfileResponse.builder()
+					.memberName(seller.getSellerName())
+					.memberProfileImage(seller.getSellerProfileImg())
+					.followingCount(seller.getSellerFollowingCount())
+					.followerCount(seller.getSellerFollowerCount())
+					.build();
+		}
+
+		memberProfileResponse.setFollowStatus(false);
+		if(memberProfileDto.getLoginMemberStatus()){
+			memberProfileResponse.setIsModifiable(true);
+		}
+		else{
+			memberProfileResponse.setIsModifiable(false);
+			Optional<Following> following = followingRepository.findByFollowingMemberIdAndFollowerMemberId(memberProfileDto.getLoginMemberId(), memberId);
+			if(following.isPresent()){
+				memberProfileResponse.setFollowStatus(true);
+			}
+		}
+
+		return memberProfileResponse;
+	}
+
+	public MemberFollowResult getResponseForFollower(int size, int startIndex, List<Following> followerList, Long loginMemberId, String loginMemberRole){
+		MemberFollowResult memberFollowResult = new MemberFollowResult();
+		List<MemberFollowListResponse> responseList = new ArrayList<>();
+		if(size < startIndex){
+			memberFollowResult.setMemberFollowListResponseList(responseList);
+			return memberFollowResult;
+		}
+
+		if(size < startIndex + pageContentNumber) {
+			for (Following following : followerList.subList(startIndex, size)) {
 				Long followingMemberId = following.getFollowingMemberId();
 				String followingMemberRole = following.getFollowingMemberRole();
+
+				MemberFollowListResponse memberFollowListResponse = new MemberFollowListResponse();
 				if(followingMemberRole.equals("user")){
-					user = userRepository.findById(followingMemberId).get();
-					MemberFollowerListResponse memberFollowerListResponse = MemberFollowerListResponse.builder()
-							.memberId(user.getUserId())
-							.memberName(user.getUserName())
-							.memberImg(user.getUserProfileImg())
-							.build();
-					followerResponseList.add(memberFollowerListResponse);
+					User user = userRepository.findById(followingMemberId).get();
+					memberFollowListResponse.setMemberId(user.getUserId());
+					memberFollowListResponse.setMemberRole("user");
+					memberFollowListResponse.setMemberName(user.getUserName());
+					memberFollowListResponse.setMemberImg(user.getUserProfileImg());
+					responseList.add(memberFollowListResponse);
 				}
 
 				else {
-					seller = sellerRepository.findById(followingMemberId).get();
-					MemberFollowerListResponse memberFollowerListResponse = MemberFollowerListResponse.builder()
-							.memberId(seller.getSellerId())
-							.memberName(seller.getSellerName())
-							.memberImg(seller.getSellerProfileImg())
-							.build();
-					followerResponseList.add(memberFollowerListResponse);
+					Seller seller = sellerRepository.findById(followingMemberId).get();
+					memberFollowListResponse.setMemberId(seller.getSellerId());
+					memberFollowListResponse.setMemberRole("seller");
+					memberFollowListResponse.setMemberName(seller.getSellerName());
+					memberFollowListResponse.setMemberImg(seller.getSellerProfileImg());
+					responseList.add(memberFollowListResponse);
+				}
+
+				memberFollowListResponse.setFollowStatus(false);
+				Optional<Following> followingStatus = followingRepository.findByFollowingMemberIdAndFollowerMemberId(loginMemberId, followingMemberId);
+				if(followingStatus.isPresent()){
+					memberFollowListResponse.setFollowStatus(true);
 				}
 			}
-		return followerResponseList;
-	}
 
-	@Override
-	public List<MemberFollowingListResponse> getFollowingList(MemberFollowingListRequest memberFollowingListRequest){
-		User user;
-		Seller seller;
-		Long memberId = memberFollowingListRequest.getMemberId();
-		List<MemberFollowingListResponse> followingResponseList = new ArrayList<>();
-		List<Following> followingList = followingRepository.findFollowerIdByFollowingId(memberId);
+			memberFollowResult.setMemberFollowListResponseList(responseList);
+			return memberFollowResult;
+		}
 
-		for (Following following : followingList) {
+		for (Following following : followerList.subList(startIndex, startIndex+pageContentNumber)) {
 			Long followingMemberId = following.getFollowingMemberId();
 			String followingMemberRole = following.getFollowingMemberRole();
+
+			MemberFollowListResponse memberFollowListResponse = new MemberFollowListResponse();
 			if(followingMemberRole.equals("user")){
-				user = userRepository.findById(followingMemberId).get();
-				MemberFollowingListResponse memberFollowingListResponse = MemberFollowingListResponse.builder()
-						.memberId(user.getUserId())
-						.memberName(user.getUserName())
-						.memberImg(user.getUserProfileImg())
-						.build();
-				followingResponseList.add(memberFollowingListResponse);
+				User user = userRepository.findById(followingMemberId).get();
+				memberFollowListResponse.setMemberId(user.getUserId());
+				memberFollowListResponse.setMemberRole("user");
+				memberFollowListResponse.setMemberName(user.getUserName());
+				memberFollowListResponse.setMemberImg(user.getUserProfileImg());
+				responseList.add(memberFollowListResponse);
 			}
 
 			else {
-				seller = sellerRepository.findById(followingMemberId).get();
-				MemberFollowingListResponse memberFollowingListResponse = MemberFollowingListResponse.builder()
-						.memberId(seller.getSellerId())
-						.memberName(seller.getSellerName())
-						.memberImg(seller.getSellerProfileImg())
-						.build();
-				followingResponseList.add(memberFollowingListResponse);
+				Seller seller = sellerRepository.findById(followingMemberId).get();
+				memberFollowListResponse.setMemberId(seller.getSellerId());
+				memberFollowListResponse.setMemberRole("seller");
+				memberFollowListResponse.setMemberName(seller.getSellerName());
+				memberFollowListResponse.setMemberImg(seller.getSellerProfileImg());
+				responseList.add(memberFollowListResponse);
+			}
+
+			memberFollowListResponse.setFollowStatus(false);
+			Optional<Following> followingStatus = followingRepository.findByFollowingMemberIdAndFollowerMemberId(loginMemberId, followingMemberId);
+			if(followingStatus.isPresent()){
+				memberFollowListResponse.setFollowStatus(true);
 			}
 		}
-		return followingResponseList;
+
+		memberFollowResult.setMemberFollowListResponseList(responseList);
+		return memberFollowResult;
 	}
+
+	public MemberFollowResult getResponseForFollowing(int size, int startIndex, List<Following> followingList, Long loginMemberId, String loginMemberRole){
+		MemberFollowResult memberFollowResult = new MemberFollowResult();
+		List<MemberFollowListResponse> responseList = new ArrayList<>();
+		if(size < startIndex){
+			memberFollowResult.setMemberFollowListResponseList(responseList);
+			return memberFollowResult;
+		}
+
+		if(size < startIndex + pageContentNumber) {
+			for (Following following : followingList.subList(startIndex, size)) {
+				Long followerMemberId = following.getFollowerMemberId();
+				String followerMemberRole = following.getFollowerMemberRole();
+
+				MemberFollowListResponse memberFollowListResponse = new MemberFollowListResponse();
+				if(followerMemberRole.equals("user")){
+					User user = userRepository.findById(followerMemberId).get();
+					memberFollowListResponse.setMemberId(user.getUserId());
+					memberFollowListResponse.setMemberRole("user");
+					memberFollowListResponse.setMemberName(user.getUserName());
+					memberFollowListResponse.setMemberImg(user.getUserProfileImg());
+					responseList.add(memberFollowListResponse);
+				}
+
+				else {
+					Seller seller = sellerRepository.findById(followerMemberId).get();
+					memberFollowListResponse.setMemberId(seller.getSellerId());
+					memberFollowListResponse.setMemberRole("seller");
+					memberFollowListResponse.setMemberName(seller.getSellerName());
+					memberFollowListResponse.setMemberImg(seller.getSellerProfileImg());
+					responseList.add(memberFollowListResponse);
+				}
+
+				memberFollowListResponse.setFollowStatus(false);
+				Optional<Following> followingStatus = followingRepository.findByFollowingMemberIdAndFollowerMemberId(loginMemberId, followerMemberId);
+				if(followingStatus.isPresent()){
+					memberFollowListResponse.setFollowStatus(true);
+				}
+			}
+
+			memberFollowResult.setMemberFollowListResponseList(responseList);
+			return memberFollowResult;
+		}
+
+		for (Following following : followingList.subList(startIndex, startIndex+pageContentNumber)) {
+			Long followerMemberId = following.getFollowerMemberId();
+			String followerMemberRole = following.getFollowerMemberRole();
+
+			MemberFollowListResponse memberFollowListResponse = new MemberFollowListResponse();
+			if(followerMemberRole.equals("user")){
+				User user = userRepository.findById(followerMemberId).get();
+				memberFollowListResponse.setMemberId(user.getUserId());
+				memberFollowListResponse.setMemberRole("user");
+				memberFollowListResponse.setMemberName(user.getUserName());
+				memberFollowListResponse.setMemberImg(user.getUserProfileImg());
+				responseList.add(memberFollowListResponse);
+			}
+
+			else {
+				Seller seller = sellerRepository.findById(followerMemberId).get();
+				memberFollowListResponse.setMemberId(seller.getSellerId());
+				memberFollowListResponse.setMemberRole("seller");
+				memberFollowListResponse.setMemberName(seller.getSellerName());
+				memberFollowListResponse.setMemberImg(seller.getSellerProfileImg());
+				responseList.add(memberFollowListResponse);
+			}
+
+			memberFollowListResponse.setFollowStatus(false);
+			Optional<Following> followingStatus = followingRepository.findByFollowingMemberIdAndFollowerMemberId(loginMemberId, followerMemberId);
+			if(followingStatus.isPresent()){
+				memberFollowListResponse.setFollowStatus(true);
+			}
+		}
+
+		memberFollowResult.setMemberFollowListResponseList(responseList);
+		return memberFollowResult;
+	}
+
+//	@Override
+//	public Boolean createProductQnA(UserQnaDto userQnaDto) {
+//		Optional<User> user = userRepository.findById(userQnaDto.getUserId());
+//		Optional<Product> product = productRepository.findById(userQnaDto.getProductId());
+//		log.info("product 정보  :  " + product.get().toString());
+//		ProductQna productQna = ProductQna.builder()
+//				.product(product.get())
+//				.user(user.get())
+//				.productQnaContent(userQnaDto.getProductQnaContent())
+//				.productQnaCreatedAt(dateUtils.transDate(env.getProperty("dateutils.format")))
+//				.productQnaStatus("waiting")
+//				.seller(product.get().getSeller())
+//				.build();
+//		ProductQna newQna = productQnaRepository.save(productQna);
+//		if (newQna == null) {
+//			return Boolean.FALSE;
+//		}
+//		return Boolean.TRUE;
+//	}
+//
+//	@Override
+//	public ProductQnAResultResponse findUserQna(Long userId, Integer pageNum) {
+//		ModelMapper modelMapper = new ModelMapper();
+//		modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
+//
+//		List<ProductQnAResponse> responses = new ArrayList<>();
+//
+//		Optional<User> user = userRepository.findById(userId);
+//		if (user.isPresent()) {
+//			List<ProductQna> productQnas = productQnaRepository.findByUser(user.get());
+//
+//			for (ProductQna productQna : productQnas) {
+//				ProductQnAResponse response = modelMapper.map(productQna, ProductQnAResponse.class);
+//				if(response.getProductQnaStatus().equals("deleted")) continue;
+//				if(response.getProductQnaStatus().equals("completed")){
+//					String answer =
+//							productQnaAnswerRepository
+//									.findByProductQna(productQna)
+//									.getProductQnaAnswerContent();
+//					response.setProductSellerAnswer(answer);
+//				}
+//				response.setUserName(user.get().getUserName());
+//				response.setUserProfileImg(user.get().getUserProfileImg());
+//				responses.add(response);
+//			}
+//		}
+//
+//		ProductQnAResultResponse resultResponse = new ProductQnAResultResponse();
+//
+//		responses.sort((o1, o2) -> {
+//			int result = o2.getProductQnaCreatedAt().compareTo(o1.getProductQnaCreatedAt());
+//			return result;
+//		});
+//
+//		int startIndex = pageNum*pageContentNumber;
+//
+//		int size = responses.size();
+//
+//		if(size<startIndex+pageContentNumber){
+//			resultResponse.setResponses(responses.subList(startIndex,size));
+//			resultResponse.setCurrentPageNum(pageNum);
+//			if(size%pageContentNumber!=0){
+//				resultResponse.setTotalPageNum((size/pageContentNumber)+1);
+//			}
+//			else{
+//				resultResponse.setTotalPageNum(size/pageContentNumber);
+//			}
+//			return resultResponse;
+//		}
+//
+//		resultResponse.setResponses(responses.subList(startIndex,startIndex+pageContentNumber));
+//		resultResponse.setCurrentPageNum(pageNum);
+//		if(size%pageContentNumber!=0){
+//			resultResponse.setTotalPageNum((size/pageContentNumber)+1);
+//		}
+//		else{
+//			resultResponse.setTotalPageNum(size/pageContentNumber);
+//		}
+//		return resultResponse;
+//	}
+//
+//	/**
+//	 * 유저의 질의를 수정하는 메서드
+//	 * @param userQnaUpdateDto
+//	 * @return
+//	 */
+//	@Override
+//	public Boolean updateUserQna(UserQnaUpdateDto userQnaUpdateDto) {
+//		Optional<ProductQna> productQna = productQnaRepository.findById(userQnaUpdateDto.getProductQnaId());
+//		productQna.get().setProductQnaContent(userQnaUpdateDto.getProductQnaContent());
+//		productQna.get().setProductQnaModifiedAt(dateUtils.transDate(env.getProperty("dateutils.format")));
+//		if (productQna.get().getProductQnaContent().equals(userQnaUpdateDto.getProductQnaContent())) {
+//			return Boolean.TRUE;
+//		}
+//		return Boolean.FALSE;
+//	}
+//
+//	@Override
+//	public Boolean deleteUserQna(Long productQnaId) {
+//		Optional<ProductQna> productQna = productQnaRepository.findById(productQnaId);
+//		productQna.get().setProductQnaStatus("deleted");
+//		if (productQna.get().getProductQnaStatus().equals("deleted")) {
+//			return Boolean.TRUE;
+//		}
+//		return Boolean.FALSE;
+//	}
+
 }

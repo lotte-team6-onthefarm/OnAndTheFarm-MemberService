@@ -1,47 +1,47 @@
 package com.team6.onandthefarmmemberservice.service.user;
 
 import com.team6.onandthefarmmemberservice.dto.following.MemberFollowingDto;
+import com.team6.onandthefarmmemberservice.dto.following.MemberProfileDto;
 import com.team6.onandthefarmmemberservice.dto.user.UserInfoDto;
 import com.team6.onandthefarmmemberservice.dto.user.UserLoginDto;
-import com.team6.onandthefarmmemberservice.dto.user.UserQnaDto;
 import com.team6.onandthefarmmemberservice.security.jwt.Token;
 import com.team6.onandthefarmmemberservice.vo.following.*;
 import com.team6.onandthefarmmemberservice.vo.user.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.List;
+import java.io.IOException;
 
 public interface UserService {
-
 
     UserTokenResponse login(UserLoginDto userLoginDto);
 
     Boolean logout(Long userId);
 
-    Long registerUserInfo(UserInfoDto userInfoDto);
+    Boolean loginPhoneConfirm(String phone);
 
     Token reIssueToken(String refreshToken, HttpServletRequest request, HttpServletResponse response);
 
-    Long updateUserInfo(UserInfoDto userInfoDto);
+    Long updateUserInfo(UserInfoDto userInfoDto) throws IOException;
 
     UserInfoResponse findUserInfo(Long userId);
-
-//    Boolean createProductQnA(UserQnaDto userQnaDto);
-//
-//    List<ProductQnAResponse> findUserQna(Long userId);
-//
-//    Boolean updateUserQna(UserQnaUpdateDto userQnaUpdateDto);
-//
-//    Boolean deleteUserQna(Long productQnaId);
 
     Long addFollowList(MemberFollowingDto memberFollowingDto);
 
     Long cancelFollowList(MemberFollowingDto memberFollowingDto);
 
-    MemberFollowCountResponse getFollowingCount(MemberFollowCountRequest memberFollowCountRequest);
+    MemberFollowResult getFollowerList(MemberFollowerListRequest memberFollowerListRequest);
 
-    List<MemberFollowerListResponse> getFollowerList(MemberFollowerListRequest memberFollowerListRequest);
+    MemberFollowResult getFollowingList(MemberFollowingListRequest memberFollowingListRequest);
 
-    List<MemberFollowingListResponse> getFollowingList(MemberFollowingListRequest memberFollowingListRequest);
+    MemberProfileResponse getMemberProfile(MemberProfileDto memberProfileDto);
+
+
+//    Boolean createProductQnA(UserQnaDto userQnaDto);
+//
+//    ProductQnAResultResponse findUserQna(Long userId, Integer pageNum);
+//
+//    Boolean updateUserQna(UserQnaUpdateDto userQnaUpdateDto);
+//
+//    Boolean deleteUserQna(Long productQnaId);
 }

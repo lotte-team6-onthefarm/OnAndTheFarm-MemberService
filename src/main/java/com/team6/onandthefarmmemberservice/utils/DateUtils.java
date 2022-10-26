@@ -1,14 +1,20 @@
 package com.team6.onandthefarmmemberservice.utils;
 
+import org.joda.time.LocalTime;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
+import java.util.Locale;
+
 @Component
 public class DateUtils {
 
     public String transDate(String pattern){
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern, Locale.KOREA);
         String date = simpleDateFormat.format(new Date());
         return date;
     }
