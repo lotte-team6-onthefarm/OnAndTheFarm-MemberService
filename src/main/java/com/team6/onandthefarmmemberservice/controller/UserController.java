@@ -80,9 +80,11 @@ public class UserController {
             @RequestBody UserInfoRequest userInfoRequest) {
 
         BaseResponse response = null;
+        String[] principals = principal.getName().split(" ");
+        Long memberId = Long.parseLong(principals[0]);
 
         UserInfoDto userInfoDto = UserInfoDto.builder()
-                .userId(Long.parseLong(principal.getName()))
+                .userId(memberId)
                 .userZipcode(userInfoRequest.getUserZipcode())
                 .userAddress(userInfoRequest.getUserAddress())
                 .userAddressDetail(userInfoRequest.getUserAddressDetail())
