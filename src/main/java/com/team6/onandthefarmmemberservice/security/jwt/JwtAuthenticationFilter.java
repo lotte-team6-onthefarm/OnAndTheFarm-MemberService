@@ -19,7 +19,7 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtTokenUtil jwtTokenUtil;
+    //private final JwtTokenUtil jwtTokenUtil;
 
     private String adminKey;
 
@@ -27,7 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     public JwtAuthenticationFilter(JwtTokenUtil jwtTokenUtil, Environment env) {
-        this.jwtTokenUtil = jwtTokenUtil;
+        //this.jwtTokenUtil = jwtTokenUtil;
         this.env = env;
         this.adminKey = env.getProperty("custom-api-key.jwt.admin-key");
     }
@@ -38,15 +38,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String memberId = request.getHeader("memberId");
         String memberRole = request.getHeader("memberRole");
 
-        // 식별된 정상 유저인 경우, 요청 context 내에서 참조 가능한 인증 정보(jwtAuthentication) 생성
+
+            // 식별된 정상 유저인 경우, 요청 context 내에서 참조 가능한 인증 정보(jwtAuthentication) 생성
         UsernamePasswordAuthenticationToken jwtAuthentication = null;
-        if(memberRole.equals("user")) {
-            jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
-                    memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_USER"));
-        }
-        else{
-            jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
-                    memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_ADMIN"));
+        if(memberId != null) {
+            if (memberRole.equals("user")) {
+                jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
+                        memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_USER"));
+            } else {
+                jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
+                        memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_ADMIN"));
+            }
         }
 
         // jwt 토큰으로 부터 획득한 인증 정보(authentication) 설정
