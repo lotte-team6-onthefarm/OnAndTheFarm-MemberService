@@ -2,6 +2,7 @@ package com.team6.onandthefarmmemberservice.feignclient.service;
 
 import com.team6.onandthefarmmemberservice.entity.user.User;
 import com.team6.onandthefarmmemberservice.feignclient.vo.UserClientResponse;
+import com.team6.onandthefarmmemberservice.feignclient.vo.UserVo;
 import com.team6.onandthefarmmemberservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -16,12 +17,12 @@ public class MemberServiceClientServiceImp implements MemberServiceClientService
 
     private final UserRepository userRepository;
 
-    public UserClientResponse findByUserId(Long userId){
+    public UserVo findByUserId(Long userId){
         ModelMapper modelMapper = new ModelMapper();
         modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
 
         User user = userRepository.findById(userId).get();
-        UserClientResponse response = modelMapper.map(user,UserClientResponse.class);
+        UserVo response = modelMapper.map(user,UserVo.class);
 
         return response;
     }
