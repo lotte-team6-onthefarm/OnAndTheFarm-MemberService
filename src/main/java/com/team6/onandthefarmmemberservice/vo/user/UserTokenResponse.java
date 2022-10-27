@@ -14,4 +14,6 @@ public class UserTokenResponse {
 
     private String email;
 
+    private Long userId;
+
 }
