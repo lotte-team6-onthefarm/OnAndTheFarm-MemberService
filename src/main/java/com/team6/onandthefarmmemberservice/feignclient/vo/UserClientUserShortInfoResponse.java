@@ -15,5 +15,4 @@ public class UserClientUserShortInfoResponse {
 	private String userProfileImg;
 	private String userEmail;
 	private String userName;
-
 }

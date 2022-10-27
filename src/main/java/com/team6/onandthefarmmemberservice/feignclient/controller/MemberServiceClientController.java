@@ -2,6 +2,7 @@ package com.team6.onandthefarmmemberservice.feignclient.controller;
 
 import com.team6.onandthefarmmemberservice.feignclient.service.MemberServiceClientService;
 import com.team6.onandthefarmmemberservice.feignclient.vo.UserClientResponse;
+import com.team6.onandthefarmmemberservice.feignclient.vo.UserClientUserShortInfoResponse;
 import com.team6.onandthefarmmemberservice.feignclient.vo.UserVo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,5 +23,10 @@ public class MemberServiceClientController {
     @GetMapping("/api/user/members/member-service/{user-no}")
     public UserVo findByUserId(@PathVariable("user-no") Long userId){
         return memberServiceClientService.findByUserId(userId);
+    }
+
+    @GetMapping("/api/user/member/member-service/short-info/{user-no}")
+    UserClientUserShortInfoResponse findUserNameByUserId(@PathVariable("user-no") Long userId){
+        return memberServiceClientService.getShortInfoResponse(userId);
     }
 }
