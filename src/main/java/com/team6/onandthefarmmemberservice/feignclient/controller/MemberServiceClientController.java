@@ -1,6 +1,7 @@
 package com.team6.onandthefarmmemberservice.feignclient.controller;
 
 import com.team6.onandthefarmmemberservice.feignclient.service.MemberServiceClientService;
+import com.team6.onandthefarmmemberservice.feignclient.vo.SellerVo;
 import com.team6.onandthefarmmemberservice.feignclient.vo.UserClientResponse;
 import com.team6.onandthefarmmemberservice.feignclient.vo.UserClientUserShortInfoResponse;
 import com.team6.onandthefarmmemberservice.feignclient.vo.UserVo;
@@ -25,8 +26,13 @@ public class MemberServiceClientController {
         return memberServiceClientService.findByUserId(userId);
     }
 
-    @GetMapping("/api/user/member/member-service/short-info/{user-no}")
+    @GetMapping("/api/user/members/member-service/short-info/{user-no}")
     UserClientUserShortInfoResponse findUserNameByUserId(@PathVariable("user-no") Long userId){
         return memberServiceClientService.getShortInfoResponse(userId);
+    }
+
+    @GetMapping("/api/seller/members/member-service/{seller-no}")
+    SellerVo findBySellerId(@PathVariable("seller-no")Long sellerId){
+        return memberServiceClientService.findBySellerId(sellerId);
     }
 }
