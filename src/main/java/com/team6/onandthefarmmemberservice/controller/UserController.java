@@ -243,33 +243,96 @@ public class UserController {
             @ApiIgnore Principal principal,
             @RequestParam Map<String, String> request){
 
-        String[] principalInfo = principal.getName().split(" ");
-        Long loginMemberId = Long.parseLong(principalInfo[0]);
-        String loginMemberRole = principalInfo[1];
+        /**
+         *  1. 토큰 있을때
+         *  1.1. memberId가 없을때 -> 내꺼 리스트 조회
+         *  1.2. memberId가 있을때 -> memberId꺼 리스트 조회
+         *  2. 토큰 없을때
+         *  2.1. memberId가 없을때 -> 실행되면 안된다.
+         *  2.2. memberId가 있을때 -> memberId꺼 리스트 조회
+         */
+        if(principal != null){ // 1.
+            String[] principalInfo = principal.getName().split(" ");
+            Long loginMemberId = Long.parseLong(principalInfo[0]);
+            String loginMemberRole = principalInfo[1];
 
-        MemberFollowerListRequest memberFollowerListRequest = new MemberFollowerListRequest();
-        memberFollowerListRequest.setPageNumber(Integer.parseInt(request.get("pageNumber")));
-        memberFollowerListRequest.setLoginMemberId(loginMemberId);
-        memberFollowerListRequest.setLoginMemberRole(loginMemberRole);
+            MemberFollowerListRequest memberFollowerListRequest = new MemberFollowerListRequest();
+            memberFollowerListRequest.setPageNumber(Integer.parseInt(request.get("pageNumber")));
+            memberFollowerListRequest.setLoginMemberId(loginMemberId);
+            memberFollowerListRequest.setLoginMemberRole(loginMemberRole);
 
-        if(request.containsKey("memberId")) {
-            memberFollowerListRequest.setMemberId(Long.parseLong(request.get("memberId")));
-            memberFollowerListRequest.setMemberRole(request.get("memberRole"));
+            if(request.containsKey("memberId")) { // 1.2.
+                memberFollowerListRequest.setMemberId(Long.parseLong(request.get("memberId")));
+                memberFollowerListRequest.setMemberRole(request.get("memberRole"));
+            }
+            else{ // 1.1.
+                memberFollowerListRequest.setMemberId(loginMemberId);
+                memberFollowerListRequest.setMemberRole(loginMemberRole);
+            }
+
+            MemberFollowResult followerList = userService.getFollowerList(memberFollowerListRequest);
+
+            BaseResponse response = BaseResponse.builder()
+                    .httpStatus(HttpStatus.OK)
+                    .message("OK")
+                    .data(followerList)
+                    .build();
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }
-        else{
-            memberFollowerListRequest.setMemberId(loginMemberId);
-            memberFollowerListRequest.setMemberRole(loginMemberRole);
+        else{ // 2.
+            MemberFollowerListRequest memberFollowerListRequest = new MemberFollowerListRequest();
+            memberFollowerListRequest.setPageNumber(Integer.parseInt(request.get("pageNumber")));
+
+            if(request.containsKey("memberId")) { // 2.2.
+                memberFollowerListRequest.setMemberId(Long.parseLong(request.get("memberId")));
+                memberFollowerListRequest.setMemberRole(request.get("memberRole"));
+
+                MemberFollowResult followerList = userService.getFollowerList(memberFollowerListRequest);
+
+                BaseResponse response = BaseResponse.builder()
+                        .httpStatus(HttpStatus.OK)
+                        .message("OK")
+                        .data(followerList)
+                        .build();
+
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            }
         }
-
-        MemberFollowResult followerList = userService.getFollowerList(memberFollowerListRequest);
-
         BaseResponse response = BaseResponse.builder()
-                .httpStatus(HttpStatus.OK)
-                .message("OK")
-                .data(followerList)
+                .httpStatus(HttpStatus.BAD_REQUEST)
+                .message("BAD_REQUEST")
                 .build();
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+
+////        String[] principalInfo = principal.getName().split(" ");
+////        Long loginMemberId = Long.parseLong(principalInfo[0]);
+////        String loginMemberRole = principalInfo[1];
+////
+////        MemberFollowerListRequest memberFollowerListRequest = new MemberFollowerListRequest();
+////        memberFollowerListRequest.setPageNumber(Integer.parseInt(request.get("pageNumber")));
+////        memberFollowerListRequest.setLoginMemberId(loginMemberId);
+////        memberFollowerListRequest.setLoginMemberRole(loginMemberRole);
+////
+////        if(request.containsKey("memberId")) {
+////            memberFollowerListRequest.setMemberId(Long.parseLong(request.get("memberId")));
+////            memberFollowerListRequest.setMemberRole(request.get("memberRole"));
+////        }
+////        else{
+////            memberFollowerListRequest.setMemberId(loginMemberId);
+////            memberFollowerListRequest.setMemberRole(loginMemberRole);
+////        }
+////
+////        MemberFollowResult followerList = userService.getFollowerList(memberFollowerListRequest);
+//
+//        BaseResponse response = BaseResponse.builder()
+//                .httpStatus(HttpStatus.OK)
+//                .message("OK")
+//                .data(followerList)
+//                .build();
+//
+//        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/follow/following-list")
@@ -278,33 +341,92 @@ public class UserController {
             @ApiIgnore Principal principal,
             @RequestParam Map<String, String> request){
 
-        String[] principalInfo = principal.getName().split(" ");
-        Long loginMemberId = Long.parseLong(principalInfo[0]);
-        String loginMemberRole = principalInfo[1];
+        /**
+         *  1. 토큰 있을때
+         *  1.1. memberId가 없을때 -> 내꺼 리스트 조회
+         *  1.2. memberId가 있을때 -> memberId꺼 리스트 조회
+         *  2. 토큰 없을때
+         *  2.1. memberId가 없을때 -> 실행되면 안된다.
+         *  2.2. memberId가 있을때 -> memberId꺼 리스트 조회
+         */
+        if(principal != null){ // 1.
+            String[] principalInfo = principal.getName().split(" ");
+            Long loginMemberId = Long.parseLong(principalInfo[0]);
+            String loginMemberRole = principalInfo[1];
 
-        MemberFollowingListRequest memberFollowingListRequest = new MemberFollowingListRequest();
-        memberFollowingListRequest.setPageNumber(Integer.parseInt(request.get("pageNumber")));
-        memberFollowingListRequest.setLoginMemberId(loginMemberId);
-        memberFollowingListRequest.setLoginMemberRole(loginMemberRole);
+            MemberFollowingListRequest memberFollowingListRequest = new MemberFollowingListRequest();
+            memberFollowingListRequest.setPageNumber(Integer.parseInt(request.get("pageNumber")));
+            memberFollowingListRequest.setLoginMemberId(loginMemberId);
+            memberFollowingListRequest.setLoginMemberRole(loginMemberRole);
 
-        if(request.containsKey("memberId")) {
-            memberFollowingListRequest.setMemberId(Long.parseLong(request.get("memberId")));
-            memberFollowingListRequest.setMemberRole(request.get("memberRole"));
+            if(request.containsKey("memberId")) { // 1.2
+                memberFollowingListRequest.setMemberId(Long.parseLong(request.get("memberId")));
+                memberFollowingListRequest.setMemberRole(request.get("memberRole"));
+            }
+            else { // 1.1
+                memberFollowingListRequest.setMemberId(loginMemberId);
+                memberFollowingListRequest.setMemberRole(loginMemberRole);
+            }
+
+            MemberFollowResult followingList = userService.
+                    getFollowingList(memberFollowingListRequest);
+
+            BaseResponse response = BaseResponse.builder()
+                    .httpStatus(HttpStatus.OK)
+                    .message("OK")
+                    .data(followingList)
+                    .build();
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }
-        else {
-            memberFollowingListRequest.setMemberId(loginMemberId);
-            memberFollowingListRequest.setMemberRole(loginMemberRole);
+        else{ // 2.
+            MemberFollowingListRequest memberFollowingListRequest = new MemberFollowingListRequest();
+            memberFollowingListRequest.setPageNumber(Integer.parseInt(request.get("pageNumber")));
+
+            if(request.containsKey("memberId")) {
+                memberFollowingListRequest.setMemberId(Long.parseLong(request.get("memberId")));
+                memberFollowingListRequest.setMemberRole(request.get("memberRole"));
+
+                MemberFollowResult followingList = userService.
+                        getFollowingList(memberFollowingListRequest);
+
+                BaseResponse response = BaseResponse.builder()
+                        .httpStatus(HttpStatus.OK)
+                        .message("OK")
+                        .data(followingList)
+                        .build();
+
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            }
         }
 
-        MemberFollowResult followingList = userService.getFollowingList(memberFollowingListRequest);
+//        String[] principalInfo = principal.getName().split(" ");
+//        Long loginMemberId = Long.parseLong(principalInfo[0]);
+//        String loginMemberRole = principalInfo[1];
+//
+//        MemberFollowingListRequest memberFollowingListRequest = new MemberFollowingListRequest();
+//        memberFollowingListRequest.setPageNumber(Integer.parseInt(request.get("pageNumber")));
+//        memberFollowingListRequest.setLoginMemberId(loginMemberId);
+//        memberFollowingListRequest.setLoginMemberRole(loginMemberRole);
+//
+//        if(request.containsKey("memberId")) {
+//            memberFollowingListRequest.setMemberId(Long.parseLong(request.get("memberId")));
+//            memberFollowingListRequest.setMemberRole(request.get("memberRole"));
+//        }
+//        else {
+//            memberFollowingListRequest.setMemberId(loginMemberId);
+//            memberFollowingListRequest.setMemberRole(loginMemberRole);
+//        }
+//
+//        MemberFollowResult followingList = userService.
+//                getFollowingList(memberFollowingListRequest);
 
         BaseResponse response = BaseResponse.builder()
-                .httpStatus(HttpStatus.OK)
-                .message("OK")
-                .data(followingList)
+                .httpStatus(HttpStatus.BAD_REQUEST)
+                .message("BAD_REQUEST")
                 .build();
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @GetMapping("/profile")
@@ -314,20 +436,17 @@ public class UserController {
 
         MemberProfileDto memberProfileDto = new MemberProfileDto();
 
-        String[] principalInfo = principal.getName().split(" ");
-        Long loginId = Long.parseLong(principalInfo[0]);
-        String loginRole = principalInfo[1];
+        if(principal != null){
+            String[] principalInfo = principal.getName().split(" ");
+            Long loginId = Long.parseLong(principalInfo[0]);
+            String loginRole = principalInfo[1];
 
-        memberProfileDto.setLoginMemberId(loginId);
-        memberProfileDto.setLoginMemberRole(loginRole);
-
-        if(request.containsKey("memberId")) {
-            memberProfileDto.setMemberId(Long.parseLong(request.get("memberId")));
-            memberProfileDto.setMemberRole(request.get("memberRole"));
-        }else{
-            memberProfileDto.setMemberId(loginId);
-            memberProfileDto.setMemberRole(loginRole);
+            memberProfileDto.setLoginMemberId(loginId);
+            memberProfileDto.setLoginMemberRole(loginRole);
         }
+
+        memberProfileDto.setMemberId(Long.parseLong(request.get("memberId")));
+        memberProfileDto.setMemberRole(request.get("memberRole"));
 
         MemberProfileResponse memberProfileResponse = userService.getMemberProfile(memberProfileDto);
 

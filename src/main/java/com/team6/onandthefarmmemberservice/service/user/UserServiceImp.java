@@ -338,8 +338,11 @@ public class UserServiceImp implements UserService {
 
 	@Override
 	public MemberFollowResult getFollowerList(MemberFollowerListRequest memberFollowerListRequest){
-
-		Long memberId = memberFollowerListRequest.getMemberId();
+		Long memberId = null;
+		if(memberFollowerListRequest.getMemberId()==null){
+			memberId = memberFollowerListRequest.getLoginMemberId();
+		}
+		memberId = memberFollowerListRequest.getMemberId();
 		Long loginMemberId = memberFollowerListRequest.getLoginMemberId();
 		String loginMemberRole = memberFollowerListRequest.getLoginMemberRole();
 		List<Following> followerList = followingRepository.findFollowingIdByFollowerId(memberId);
