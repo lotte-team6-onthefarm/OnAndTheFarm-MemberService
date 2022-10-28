@@ -27,7 +27,7 @@ public class ProductServiceClientController {
 		return productServiceClientService.findUserNameByUserId(userId);
 	}
 
-	@GetMapping("/api/seller/members/member-service/{seller-no}")
+	@GetMapping("/api/seller/members/member-service/seller-detail/{seller-no}")
 	public SellerClientSellerDetailResponse findBySellerId(@PathVariable("seller-no") Long sellerId){
 		return productServiceClientService.findSellerDetailBySellerId(sellerId);
 	}
