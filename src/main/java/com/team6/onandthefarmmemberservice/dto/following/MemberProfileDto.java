@@ -13,8 +13,6 @@ public class MemberProfileDto {
 
     private String memberProfileImage;
 
-    private Boolean loginMemberStatus;
-
     private Long loginMemberId;
 
     private String loginMemberRole;

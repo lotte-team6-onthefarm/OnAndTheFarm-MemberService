@@ -15,4 +15,5 @@ public class MemberFollowListResponse {
 	private String memberName;
 	private String memberImg;
 	private Boolean followStatus;
+	private Boolean isModifiable;
 }
