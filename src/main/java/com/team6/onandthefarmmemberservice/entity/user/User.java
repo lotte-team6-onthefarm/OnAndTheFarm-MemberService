@@ -52,8 +52,6 @@ public class User {
 
     private String userNaverNumber;
 
-    private String userAppleNumber;
-
     private String userGoogleNumber;
 
     private Integer userFollowingCount;
@@ -61,4 +59,6 @@ public class User {
     private Integer userFollowerCount;
 
     private String userProfileImg;
+
+    private Integer userPoint;
 }
