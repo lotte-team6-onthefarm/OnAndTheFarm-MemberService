@@ -445,8 +445,18 @@ public class UserController {
             memberProfileDto.setLoginMemberRole(loginRole);
         }
 
-        memberProfileDto.setMemberId(Long.parseLong(request.get("memberId")));
-        memberProfileDto.setMemberRole(request.get("memberRole"));
+        if(request.size() == 0){ // 나의 한상을 접근할 경우
+            String[] principalInfo = principal.getName().split(" ");
+            Long loginId = Long.parseLong(principalInfo[0]);
+            String loginRole = principalInfo[1];
+
+            memberProfileDto.setMemberId(loginId);
+            memberProfileDto.setMemberRole(loginRole);
+        }
+        else{
+            memberProfileDto.setMemberId(Long.parseLong(request.get("memberId")));
+            memberProfileDto.setMemberRole(request.get("memberRole"));
+        }
 
         MemberProfileResponse memberProfileResponse = userService.getMemberProfile(memberProfileDto);
 

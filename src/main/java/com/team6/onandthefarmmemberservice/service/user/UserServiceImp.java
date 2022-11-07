@@ -8,6 +8,7 @@ import com.team6.onandthefarmmemberservice.entity.following.Following;
 import com.team6.onandthefarmmemberservice.entity.seller.Seller;
 import com.team6.onandthefarmmemberservice.entity.user.User;
 import com.team6.onandthefarmmemberservice.repository.FollowingRepository;
+import com.team6.onandthefarmmemberservice.repository.ReservedPointRepository;
 import com.team6.onandthefarmmemberservice.repository.SellerRepository;
 import com.team6.onandthefarmmemberservice.repository.UserRepository;
 import com.team6.onandthefarmmemberservice.security.jwt.JwtTokenUtil;
@@ -61,6 +62,8 @@ public class UserServiceImp implements UserService {
 
 	private final S3Upload s3Upload;
 
+	private final ReservedPointRepository reservedPointRepository;
+
 	@Autowired
 	public UserServiceImp(UserRepository userRepository,
 						  SellerRepository sellerRepository,
@@ -70,7 +73,8 @@ public class UserServiceImp implements UserService {
 						  KakaoOAuth2 kakaoOAuth2,
 						  NaverOAuth2 naverOAuth2,
 						  JwtTokenUtil jwtTokenUtil,
-						  S3Upload s3Upload) {
+						  S3Upload s3Upload,
+						  ReservedPointRepository reservedPointRepository) {
 		this.userRepository = userRepository;
 		this.sellerRepository = sellerRepository;
 		this.followingRepository = followingRepository;
@@ -80,6 +84,7 @@ public class UserServiceImp implements UserService {
 		this.naverOAuth2 = naverOAuth2;
 		this.jwtTokenUtil = jwtTokenUtil;
 		this.s3Upload=s3Upload;
+		this.reservedPointRepository=reservedPointRepository;
 	}
 
 	@Override
@@ -431,6 +436,24 @@ public class UserServiceImp implements UserService {
 		}
 
 		return memberProfileResponse;
+	}
+
+	@Override
+	public Boolean isAlreadyProcessedOrderId(String orderSerial) {
+		boolean result
+				= reservedPointRepository.existsByOrderSerial(orderSerial);
+
+		if(!result){ // 처리된 메시지가 없는 경우 중복되지 않은 메시지
+			return true; //
+		}
+
+		return false;
+	}
+
+	@Override
+	public void addPoint(Long memberId) {
+		Optional<User> user = userRepository.findById(memberId);
+		user.get()
 	}
 
 	public MemberFollowResult getResponseForFollower(int size, int startIndex, List<Following> followerList, Long loginMemberId, String loginMemberRole){
