@@ -451,9 +451,14 @@ public class UserServiceImp implements UserService {
 	}
 
 	@Override
-	public void addPoint(Long memberId) {
+	public Boolean addPoint(Long memberId) {
 		Optional<User> user = userRepository.findById(memberId);
-		user.get()
+		if(user.isPresent()){
+			Integer userPoint = user.get().getUserPoint();
+			user.get().setUserPoint(userPoint+10);
+			return Boolean.TRUE;
+		}
+		return Boolean.FALSE;
 	}
 
 	public MemberFollowResult getResponseForFollower(int size, int startIndex, List<Following> followerList, Long loginMemberId, String loginMemberRole){
