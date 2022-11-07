@@ -38,5 +38,5 @@ public interface UserService {
 
     Boolean isAlreadyProcessedOrderId(String orderSerial);
 
-    void addPoint(Long memberId);
+    Boolean addPoint(Long memberId);
 }
