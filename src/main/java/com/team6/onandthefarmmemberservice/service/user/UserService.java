@@ -36,4 +36,7 @@ public interface UserService {
 
     MemberProfileResponse getMemberProfile(MemberProfileDto memberProfileDto);
 
+    Boolean isAlreadyProcessedOrderId(String orderSerial);
+
+    void addPoint(Long memberId);
 }
