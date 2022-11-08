@@ -11,4 +11,6 @@ import lombok.Setter;
 public class SellerLoginResponse {
 
     private Token token;
+    private String role;
+
 }
