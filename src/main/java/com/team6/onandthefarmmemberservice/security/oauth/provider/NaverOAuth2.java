@@ -18,7 +18,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Component
-public class NaverOAuth2 implements OAuth2UserUtil {
+public class NaverOAuth2 {
 
     private Environment env;
 
@@ -35,7 +35,6 @@ public class NaverOAuth2 implements OAuth2UserUtil {
         this.redirectUrl = env.getProperty("custom-api-key.naver.redirect-uri");
     }
 
-    @Override
     public String getAccessToken(UserLoginDto userLoginDto) {
         // HttpHeader 오브젝트 생성
         HttpHeaders headers = new HttpHeaders();
@@ -70,7 +69,6 @@ public class NaverOAuth2 implements OAuth2UserUtil {
         }
     }
 
-    @Override
     public OAuth2UserDto getUserInfo(String accessToken) {
         // HttpHeader 오브젝트 생성
         HttpHeaders headers = new HttpHeaders();
@@ -89,12 +87,10 @@ public class NaverOAuth2 implements OAuth2UserUtil {
             JSONObject iJson = new JSONObject(userInfoString);
             JSONObject responseJson = new JSONObject(iJson.get("response").toString());
             String naverId = responseJson.getString("id");
-            String name = responseJson.getString("name");
             String email = responseJson.getString("email");
 
             OAuth2UserDto userDto = OAuth2UserDto.builder()
-                    .naverId(naverId)
-                    .name(name)
+                    .oauthId(naverId)
                     .email(email)
                     .build();
 

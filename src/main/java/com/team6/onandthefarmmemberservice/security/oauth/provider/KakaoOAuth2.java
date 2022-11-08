@@ -37,7 +37,6 @@ public class KakaoOAuth2 {
 		this.redirectUrl = env.getProperty("custom-api-key.kakao.redirect-uri");
 	}
 
-	//@Override
 	public String getAccessToken(UserLoginDto userLoginDto) {
 		// HttpHeader 오브젝트 생성
 		HttpHeaders headers = new HttpHeaders();
@@ -69,7 +68,6 @@ public class KakaoOAuth2 {
 		}
 	}
 
-	//@Override
 	public OAuth2UserDto getUserInfo(String accessToken) {
 		// HttpHeader 오브젝트 생성
 		HttpHeaders headers = new HttpHeaders();
@@ -87,11 +85,10 @@ public class KakaoOAuth2 {
 			String userInfoString = response.getBody();
 			JSONObject iJson = new JSONObject(userInfoString);
 			Long kakaoId = iJson.getLong("id");
-			//String name = iJson.getJSONObject("kakao_account").getString("name");
 			String email = iJson.getJSONObject("kakao_account").getString("email");
 
 			OAuth2UserDto userDto = OAuth2UserDto.builder()
-					.kakaoId(kakaoId)
+					.oauthId(Long.toString(kakaoId))
 					.email(email)
 					.build();
 
