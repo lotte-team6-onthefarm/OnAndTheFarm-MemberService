@@ -440,8 +440,8 @@ public class UserServiceImp implements UserService {
 
 	@Override
 	public Boolean isAlreadyProcessedOrderId(String orderSerial) {
-		boolean result
-				= reservedPointRepository.existsByOrderSerial(orderSerial);
+		boolean result // 처리된 메시지가 있으면 true / 없으면 false
+				= reservedPointRepository.existsByOrderSerialAndIdempoStatus(orderSerial,true);
 
 		if(!result){ // 처리된 메시지가 없는 경우 중복되지 않은 메시지
 			return true; //
@@ -451,11 +451,12 @@ public class UserServiceImp implements UserService {
 	}
 
 	@Override
-	public Boolean addPoint(Long memberId) {
+	public Boolean addPoint(String orderSerial, Long memberId) {
 		Optional<User> user = userRepository.findById(memberId);
 		if(user.isPresent()){
 			Integer userPoint = user.get().getUserPoint();
 			user.get().setUserPoint(userPoint+10);
+			reservedPointRepository.findByOrderSerial(orderSerial).get().setIdempoStatus(true);
 			return Boolean.TRUE;
 		}
 		return Boolean.FALSE;
