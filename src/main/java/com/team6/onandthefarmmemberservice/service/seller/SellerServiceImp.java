@@ -2,15 +2,19 @@ package com.team6.onandthefarmmemberservice.service.seller;
 
 
 import com.team6.onandthefarmmemberservice.dto.seller.SellerDto;
+import com.team6.onandthefarmmemberservice.entity.admin.Admin;
 import com.team6.onandthefarmmemberservice.entity.seller.Seller;
+import com.team6.onandthefarmmemberservice.repository.AdminRepository;
 import com.team6.onandthefarmmemberservice.repository.SellerRepository;
 import com.team6.onandthefarmmemberservice.security.jwt.JwtTokenUtil;
 import com.team6.onandthefarmmemberservice.security.jwt.Token;
 import com.team6.onandthefarmmemberservice.utils.DateUtils;
 import com.team6.onandthefarmmemberservice.utils.S3Upload;
 import com.team6.onandthefarmmemberservice.vo.seller.SellerInfoResponse;
+import com.team6.onandthefarmmemberservice.vo.seller.SellerLoginResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +25,11 @@ import java.util.*;
 @Transactional
 public class SellerServiceImp implements SellerService{
 
-    private SellerRepository sellerRepository;
+    private final AdminRepository adminRepository;
+
+    private final SellerRepository sellerRepository;
+
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     private DateUtils dateUtils;
 
@@ -33,12 +41,16 @@ public class SellerServiceImp implements SellerService{
 
 
     @Autowired
-    public SellerServiceImp(SellerRepository sellerRepository,
+    public SellerServiceImp(AdminRepository adminRepository,
+                            SellerRepository sellerRepository,
+                            BCryptPasswordEncoder bCryptPasswordEncoder,
                             DateUtils dateUtils,
                             Environment env,
                             JwtTokenUtil jwtTokenUtil,
                             S3Upload s3Upload) {
+        this.adminRepository = adminRepository;
         this.sellerRepository = sellerRepository;
+        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.dateUtils=dateUtils;
         this.env=env;
         this.jwtTokenUtil = jwtTokenUtil;
@@ -47,20 +59,37 @@ public class SellerServiceImp implements SellerService{
 
     /**
      * 셀러의 로그인 메소드
+     *
      * @param sellerDto
      * @return token
      */
     @Override
-    public Token login(SellerDto sellerDto) {
+    public SellerLoginResponse login(SellerDto sellerDto) {
 
-        Token token = null;
+        SellerLoginResponse sellerLoginResponse = new SellerLoginResponse();
 
-        Seller seller = sellerRepository.findBySellerEmailAndSellerPassword(sellerDto.getEmail(), sellerDto.getPassword());
-        if(seller != null){
-            token = jwtTokenUtil.generateToken(seller.getSellerId(), seller.getRole());
+        if(sellerDto.getEmail().equals("admin")){
+            Optional<Admin> admin = adminRepository.findAdminByAdminEmailAndAdminPassword(sellerDto.getEmail(), sellerDto.getPassword());
+
+            if(admin.isPresent()) {
+                Token token = jwtTokenUtil.generateToken(admin.get().getAdminId(), admin.get().getRole());
+                sellerLoginResponse.setToken(token);
+                sellerLoginResponse.setRole("admin");
+
+                return sellerLoginResponse;
+            }
         }
 
-        return token;
+        Optional<Seller> seller = sellerRepository.findBySellerEmail(sellerDto.getEmail());
+        if(seller.isPresent()){
+            if(bCryptPasswordEncoder.matches(sellerDto.getPassword(), seller.get().getSellerPassword())) {
+                Token token = jwtTokenUtil.generateToken(seller.get().getSellerId(), seller.get().getRole());
+                sellerLoginResponse.setToken(token);
+                sellerLoginResponse.setRole("seller");
+            }
+        }
+
+        return sellerLoginResponse;
     }
 
     @Override
@@ -109,18 +138,29 @@ public class SellerServiceImp implements SellerService{
      */
     @Override
     public Boolean updatePassword(SellerDto sellerDto){
-        Seller seller = sellerRepository.findBySellerEmail(sellerDto.getEmail());
-        seller.setSellerPassword(sellerDto.getPassword());
-        if(seller.getSellerPassword().equals(sellerDto.getPassword())){
+        Optional<Seller> seller = sellerRepository.findBySellerEmail(sellerDto.getEmail());
+
+        String encodePassword = bCryptPasswordEncoder.encode(sellerDto.getPassword());
+        seller.get().setSellerPassword(encodePassword);
+        if(seller.get().getSellerPassword().equals(encodePassword)){
             return Boolean.TRUE;
         }
         return Boolean.FALSE;
     }
 
     @Override
-    public Boolean searchSellerId(String sellerEmail, String phone){
-        Seller seller = sellerRepository.findBySellerEmailAndAndSellerPhone(sellerEmail,phone);
-        if(seller==null){
+    public String searchSellerId(String name, String phone){
+        Optional<Seller> seller = sellerRepository.findBySellerNameAndAndSellerPhone(name,phone);
+        if(!seller.isPresent()){
+            return "";
+        }
+        return seller.get().getSellerEmail();
+    }
+
+    public Boolean searchSellerpasswd(String sellerEmail, String name){
+        Optional<Seller> seller = sellerRepository.findBySellerEmailAndSellerName(sellerEmail,name);
+
+        if(!seller.isPresent()){
             return Boolean.FALSE;
         }
         return Boolean.TRUE;
@@ -133,6 +173,13 @@ public class SellerServiceImp implements SellerService{
      */
     @Override
     public boolean sellerSignup(SellerDto sellerDto){
+        String encodePassword = bCryptPasswordEncoder.encode(sellerDto.getPassword());
+
+        Optional<Seller> savedSeller = sellerRepository.findBySellerEmail(sellerDto.getEmail());
+        if(savedSeller.isPresent()){
+            return false;
+        }
+
         String date = dateUtils.transDate(env.getProperty("dateutils.format"));
         Seller seller = Seller.builder()
                 .sellerEmail(sellerDto.getEmail())
@@ -140,13 +187,13 @@ public class SellerServiceImp implements SellerService{
                 .sellerAddressDetail(sellerDto.getAddressDetail())
                 .sellerBusinessNumber(sellerDto.getBusinessNumber())
                 .sellerName(sellerDto.getName())
-                .sellerPassword(sellerDto.getPassword())
+                .sellerPassword(encodePassword)
                 .sellerPhone(sellerDto.getPhone())
                 .sellerZipcode(sellerDto.getZipcode())
                 .sellerRegisterDate(date)
                 .sellerShopName(sellerDto.getShopName())
                 .sellerIsActivated(Boolean.TRUE)
-                .role("ROLE_ADMIN")
+                .role("ROLE_SELLER")
                 .sellerFollowerCount(0)
                 .sellerFollowingCount(0)
                 .sellerProfileImg("https://lotte-06-s3-test.s3.ap-northeast-2.amazonaws.com/profile/seller/basic_profile.png")
@@ -164,8 +211,8 @@ public class SellerServiceImp implements SellerService{
      */
     @Override
     public boolean sellerIdCheck(String sellerEmail){
-        Seller email = sellerRepository.findBySellerEmail(sellerEmail);
-        if(email == null){
+        Optional<Seller> email = sellerRepository.findBySellerEmail(sellerEmail);
+        if(!email.isPresent()){
             return true;
         }
         return false;
