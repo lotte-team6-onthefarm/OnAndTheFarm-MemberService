@@ -3,6 +3,7 @@ package com.team6.onandthefarmmemberservice.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team6.onandthefarmmemberservice.dto.MemberPointDto;
+import com.team6.onandthefarmmemberservice.repository.ReservedPointRepository;
 import com.team6.onandthefarmmemberservice.repository.UserRepository;
 import com.team6.onandthefarmmemberservice.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +36,7 @@ public class PointOrderChannelAdapterKafkaImpl implements PointOrderChannelAdapt
         // 포인트 10점
         if(userService.isAlreadyProcessedOrderId(memberPointDto.getOrderSerial())){
             // 중복되지 않은 메시지임으로 결제 생성
-            Boolean result = userService.addPoint(memberPointDto.getMemberId());
+            Boolean result = userService.addPoint(memberPointDto.getOrderSerial(),memberPointDto.getMemberId());
             if(!result){
                 throw new Exception();
             }

@@ -67,6 +67,7 @@ public class MemberServiceClientController {
         try{
             // 상품들의 정보를 직렬화
             memberId = objectMapper.writeValueAsString(map.get("memberId"));
+            memberId = memberId.substring(1,memberId.length()-1);
             orderSerial = objectMapper.writeValueAsString(map.get("orderSerial"));
             orderSerial = orderSerial.substring(1,orderSerial.length()-1);
         } catch (JsonProcessingException e) {
