@@ -34,13 +34,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String memberId = request.getHeader("memberId");
         String memberRole = request.getHeader("memberRole");
 
-
         // 식별된 정상 유저인 경우, 요청 context 내에서 참조 가능한 인증 정보(jwtAuthentication) 생성
         UsernamePasswordAuthenticationToken jwtAuthentication = null;
         if(memberId != null) {
             if (memberRole.equals("user")) {
                 jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
                         memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_USER"));
+            } else if(memberRole.equals("seller")){
+                jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
+                        memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_SELLER"));
             } else {
                 jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
                         memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_ADMIN"));

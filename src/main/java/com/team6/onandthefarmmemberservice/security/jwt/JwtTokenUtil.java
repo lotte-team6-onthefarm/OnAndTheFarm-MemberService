@@ -49,7 +49,6 @@ public class JwtTokenUtil {
         return new Token(
                 Jwts.builder()
                         .setSubject("Access Token")
-                        //.claim("userId", userId)
                         .setClaims(claims)
                         .setIssuedAt(now)
                         .setExpiration(new Date(now.getTime() + tokenPeriod))

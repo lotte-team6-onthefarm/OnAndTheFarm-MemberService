@@ -1,8 +1,8 @@
 package com.team6.onandthefarmmemberservice.service.seller;
 
 import com.team6.onandthefarmmemberservice.dto.seller.SellerDto;
-import com.team6.onandthefarmmemberservice.security.jwt.Token;
 import com.team6.onandthefarmmemberservice.vo.seller.SellerInfoResponse;
+import com.team6.onandthefarmmemberservice.vo.seller.SellerLoginResponse;
 
 import java.io.IOException;
 
@@ -18,8 +18,10 @@ public interface SellerService {
 
     boolean sellerIdCheck(String sellerEmail);
 
-    Token login(SellerDto sellerDto);
+    SellerLoginResponse login(SellerDto sellerDto);
 
-    Boolean searchSellerId(String sellerEmail, String phone);
+    String searchSellerId(String name, String phone);
+
+    Boolean searchSellerpasswd(String sellerEmail,String name);
 
 }

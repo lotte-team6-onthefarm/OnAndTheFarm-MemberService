@@ -55,8 +55,8 @@ public class KafkaConsumerConfig {
         kafkaListenerContainerFactory.setConsumerFactory(consumerFactory());
         kafkaListenerContainerFactory.setCommonErrorHandler(kafkaListenerErrorHandler());
         kafkaListenerContainerFactory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
-        //kafkaListenerContainerFactory.getContainerProperties().setPollTimeout(3000);
-        //kafkaListenerContainerFactory.getContainerProperties().setSyncCommits(true);
+        kafkaListenerContainerFactory.getContainerProperties().setPollTimeout(3000);
+        kafkaListenerContainerFactory.getContainerProperties().setSyncCommits(true);
         return kafkaListenerContainerFactory;
     }
 
