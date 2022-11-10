@@ -1,5 +1,7 @@
 package com.team6.onandthefarmmemberservice.feignclient.service;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,14 +27,16 @@ public class ProductServiceClientServiceImpl implements ProductServiceClientServ
 	}
 
 	public UserClientUserShortInfoResponse findUserNameByUserId(Long userId){
-		User user = userRepository.findById(userId).get();
-
-		UserClientUserShortInfoResponse userClientUserShortInfoResponse = UserClientUserShortInfoResponse.builder()
-				.userProfileImg(user.getUserProfileImg())
-				.userEmail(user.getUserEmail())
-				.userName(user.getUserName())
-				.build();
-		return userClientUserShortInfoResponse;
+		Optional<User> user = userRepository.findById(userId);
+		if(user.isPresent()){
+			UserClientUserShortInfoResponse userClientUserShortInfoResponse = UserClientUserShortInfoResponse.builder()
+					.userProfileImg(user.get().getUserProfileImg())
+					.userEmail(user.get().getUserEmail())
+					.userName(user.get().getUserName())
+					.build();
+			return userClientUserShortInfoResponse;
+		}
+		return null;
 	}
 
 	public SellerClientSellerDetailResponse findSellerDetailBySellerId(Long sellerId){
