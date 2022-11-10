@@ -28,27 +28,27 @@ public class MemberServiceClientController {
      * @param userId
      * @return
      */
-    @GetMapping("/api/user/members/member-service/{user-no}")
+    @GetMapping("/api/feign/user/members/member-service/{user-no}")
     public UserVo findByUserId(@PathVariable("user-no") Long userId){
         return memberServiceClientService.findByUserId(userId);
     }
 
-    @GetMapping("/api/user/members/member-service/short-info/{user-no}")
+    @GetMapping("/api/feign/user/members/member-service/short-info/{user-no}")
     UserClientUserShortInfoResponse findUserNameByUserId(@PathVariable("user-no") Long userId){
         return memberServiceClientService.getShortInfoResponse(userId);
     }
 
-    @GetMapping("/api/seller/members/member-service/{seller-no}")
+    @GetMapping("/api/feign/seller/members/member-service/{seller-no}")
     SellerVo findBySellerId(@PathVariable("seller-no")Long sellerId){
         return memberServiceClientService.findBySellerId(sellerId);
     }
 
-    @GetMapping("/api/user/members/member-service/following")
+    @GetMapping("/api/feign/user/members/member-service/following")
     FollowingVo findByFollowingMemberIdAndFollowerMemberId(@RequestParam Long followingMemberId, @RequestParam Long followerMemberId){
         return memberServiceClientService.findByFollowingMemberIdAndFollowerMemberId(followingMemberId, followerMemberId);
     }
 
-    @GetMapping("/api/user/members/member-service/following/list/{member-no}")
+    @GetMapping("/api/feign/user/members/member-service/following/list/{member-no}")
     List<FollowingVo> findByFollowingMemberId(@PathVariable("member-no")Long memberId){
         return memberServiceClientService.findByFollowingMemberId(memberId);
     }
@@ -58,7 +58,7 @@ public class MemberServiceClientController {
      * @param map : 주문 정보를 가진 객체 productIdList : List<OrderProduct>
      * @return participantLink객체를 리턴하며, confirm을 위한 url이 존재한다.
      */
-    @PostMapping("/api/user/members/member-service/member-try")
+    @PostMapping("/api/feign/user/members/member-service/member-try")
     public ResponseEntity<ParticipantLink> orderTry(@RequestBody Map<String, Object> map){
         String memberId = "";
         String orderSerial = "";
@@ -88,7 +88,7 @@ public class MemberServiceClientController {
      * @param id
      * @return
      */
-    @PutMapping("/api/user/members/member-service/member-try/{id}")
+    @PutMapping("/api/feign/user/members/member-service/member-try/{id}")
     public ResponseEntity<Void> confirmOrderAdjustment(@PathVariable Long id) {
         try {
             memberServiceClientService.confirmOrder(id);
@@ -115,7 +115,7 @@ public class MemberServiceClientController {
      * @param id
      * @return
      */
-    @DeleteMapping("/api/user/members/member-service/member-try/{id}")
+    @DeleteMapping("/api/feign/user/members/member-service/member-try/{id}")
     public ResponseEntity<Void> cancelOrderAdjustment(@PathVariable Long id) {
         memberServiceClientService.cancelOrder(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

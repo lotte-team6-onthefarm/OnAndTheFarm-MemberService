@@ -24,12 +24,12 @@ public class ProductServiceClientController {
 		this.productServiceClientService = productServiceClientService;
 	}
 
-	@GetMapping("/api/user/members/member-service/username/{user-no}")
+	@GetMapping("/api/feign/user/members/member-service/username/{user-no}")
 	public UserClientUserShortInfoResponse findUserNameByUserId(@PathVariable("user-no") Long userId){
 		return productServiceClientService.findUserNameByUserId(userId);
 	}
 
-	@GetMapping("/api/seller/members/member-service/seller-detail/{seller-no}")
+	@GetMapping("/api/feign/seller/members/member-service/seller-detail/{seller-no}")
 	public SellerClientSellerDetailResponse findBySellerId(@PathVariable("seller-no") Long sellerId){
 		return productServiceClientService.findSellerDetailBySellerId(sellerId);
 	}
