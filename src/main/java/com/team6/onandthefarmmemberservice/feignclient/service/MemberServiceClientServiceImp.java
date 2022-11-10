@@ -68,7 +68,7 @@ public class MemberServiceClientServiceImp implements MemberServiceClientService
 
         ModelMapper modelMapper = new ModelMapper();
         modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
-        SellerVo sellerVo = modelMapper.map(seller,SellerVo.class);
+        SellerVo sellerVo = modelMapper.map(seller.get(),SellerVo.class);
 
         return sellerVo;
     }
