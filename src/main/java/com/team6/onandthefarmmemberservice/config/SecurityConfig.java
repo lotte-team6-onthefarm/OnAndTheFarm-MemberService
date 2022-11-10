@@ -34,9 +34,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 토큰 기반 인증이므로 세션 사용 하지않음
                 .and()
                 .authorizeRequests()
-                .antMatchers("/api/user/members/login", "/api/user/members/login/phone", "/api/seller/members/login", "/api/seller/members/signup", "/api/seller/members/email", "/api/seller/members/emailConfirm", "/api/seller/members/search/id", "/api/seller/members/search/passwd").permitAll()
+                .antMatchers("/api/user/members/login", "/api/user/members/login/phone", "/api/seller/members/login", "/api/seller/members/signup", "/api/seller/members/email", "/api/seller/members/emailConfirm", "/api/seller/members/search/id", "/api/seller/members/search/passwd", "/api/seller/members/passwd").permitAll()
+                .antMatchers("/api/user/product/list/**", "/api/user/product/{\\d+}", "/api/user/product/QnA/{\\d+}").permitAll()
+                .antMatchers("/api/user/review/info", "/api/user/review/list/**").permitAll()
+                .antMatchers("/api/seller/product/list/**").permitAll()
                 .antMatchers("/api/user/**").hasAnyRole("USER", "SELLER")
                 .antMatchers("/api/seller/**").hasRole("SELLER")
+                .antMatchers("/api/admin/**").hasRole("ADMIN")
+                .antMatchers("/api/feign/**").permitAll()
                 .anyRequest().permitAll()
                 .and().cors();
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // controller 시작 전에 jwt 인증을 하기 위한 필터 등록
