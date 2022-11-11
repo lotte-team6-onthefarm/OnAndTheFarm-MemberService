@@ -4,6 +4,7 @@ import com.team6.onandthefarmmemberservice.dto.following.MemberFollowingDto;
 import com.team6.onandthefarmmemberservice.dto.following.MemberProfileDto;
 import com.team6.onandthefarmmemberservice.dto.user.UserInfoDto;
 import com.team6.onandthefarmmemberservice.dto.user.UserLoginDto;
+import com.team6.onandthefarmmemberservice.dto.user.UserReIssueDto;
 import com.team6.onandthefarmmemberservice.entity.following.Following;
 import com.team6.onandthefarmmemberservice.entity.seller.Seller;
 import com.team6.onandthefarmmemberservice.entity.user.User;
@@ -18,6 +19,7 @@ import com.team6.onandthefarmmemberservice.security.oauth.provider.GoogleOAuth2;
 import com.team6.onandthefarmmemberservice.security.oauth.provider.KakaoOAuth2;
 import com.team6.onandthefarmmemberservice.security.oauth.provider.NaverOAuth2;
 import com.team6.onandthefarmmemberservice.utils.DateUtils;
+import com.team6.onandthefarmmemberservice.utils.RedisUtil;
 import com.team6.onandthefarmmemberservice.utils.S3Upload;
 import com.team6.onandthefarmmemberservice.vo.following.*;
 import com.team6.onandthefarmmemberservice.vo.user.UserInfoResponse;
@@ -35,6 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +48,8 @@ import java.util.Optional;
 public class UserServiceImp implements UserService {
 
 	private final int pageContentNumber = 8;
+
+	private Long refreshPeriod;
 
 	private final UserRepository userRepository;
 
@@ -57,6 +62,8 @@ public class UserServiceImp implements UserService {
 	private final GoogleOAuth2 googleOAuth2;
 
 	private final JwtTokenUtil jwtTokenUtil;
+
+	private final RedisUtil redisUtil;
 
 	private final DateUtils dateUtils;
 
@@ -76,6 +83,7 @@ public class UserServiceImp implements UserService {
 						  NaverOAuth2 naverOAuth2,
 						  GoogleOAuth2 googleOAuth2,
 						  JwtTokenUtil jwtTokenUtil,
+						  RedisUtil redisUtil,
 						  S3Upload s3Upload,
 						  ReservedPointRepository reservedPointRepository) {
 		this.userRepository = userRepository;
@@ -87,8 +95,11 @@ public class UserServiceImp implements UserService {
 		this.naverOAuth2 = naverOAuth2;
 		this.googleOAuth2 = googleOAuth2;
 		this.jwtTokenUtil = jwtTokenUtil;
+		this.redisUtil = redisUtil;
 		this.s3Upload=s3Upload;
 		this.reservedPointRepository=reservedPointRepository;
+
+		refreshPeriod = Long.parseLong(env.getProperty("custom-api-key.jwt.refresh-token-period"));
 	}
 
 	@Override
@@ -116,52 +127,97 @@ public class UserServiceImp implements UserService {
 			}
 		}
 
-		Optional<User> savedUser = userRepository.findByUserEmailAndProvider(userInfo.getEmail(), provider);
-		User user = null;
-		Boolean needRegister = false;
-		String email = new String();
+		if(userInfo != null) {
+			Optional<User> savedUser = userRepository.findByUserEmailAndProvider(userInfo.getEmail(), provider);
+			User user = null;
+			Boolean needRegister = false;
+			String email = new String();
 
-		if (savedUser.isPresent()) {
-			user = savedUser.get();
+			if (savedUser.isPresent()) {
+				user = savedUser.get();
 
-			if (user.getUserName() == null) {
-				needRegister = true;
-				email = user.getUserEmail();
+				if (user.getUserName() == null) {
+					needRegister = true;
+					email = user.getUserEmail();
+				}
+			} else { // DB에 유저 정보가 없다면 저장
+				needRegister = true; // 유저 정보 추가 등록이 필요함
+				email = userInfo.getEmail();
+
+				User newUser = User.builder()
+						.userEmail(userInfo.getEmail())
+						.role("ROLE_USER")
+						.provider(provider)
+						.userOauthNumber(userInfo.getOauthId())
+						.userFollowerCount(0)
+						.userFollowingCount(0)
+						.userProfileImg("https://lotte-06-s3-test.s3.ap-northeast-2.amazonaws.com/profile/user/basic_profile.png")
+						.userRegisterDate(dateUtils.transDate(env.getProperty("dateutils.format")))
+						.userIsActivated(true)
+						.build();
+				user = userRepository.save(newUser);
 			}
-		} else { // DB에 유저 정보가 없다면 저장
-			needRegister = true; // 유저 정보 추가 등록이 필요함
-			email = userInfo.getEmail();
 
-			User newUser = User.builder()
-					.userEmail(userInfo.getEmail())
-					.role("ROLE_USER")
-					.provider(provider)
-					.userOauthNumber(userInfo.getOauthId())
-					.userFollowerCount(0)
-					.userFollowingCount(0)
-					.userProfileImg("https://lotte-06-s3-test.s3.ap-northeast-2.amazonaws.com/profile/user/basic_profile.png")
-					.userRegisterDate(dateUtils.transDate(env.getProperty("dateutils.format")))
-					.userIsActivated(true)
+			// jwt 토큰 발행
+			Token token = jwtTokenUtil.generateToken(user.getUserId(), user.getRole());
+			Long userId = user.getUserId();
+
+			// redis에 refresh token 저장
+			Duration expireDuration = Duration.ofMillis(refreshPeriod);
+			redisUtil.setValueDuration(token.getRefreshToken(), Long.toString(userId), expireDuration);
+
+			UserTokenResponse userTokenResponse = UserTokenResponse.builder()
+					.token(token)
+					.needRegister(needRegister)
+					.email(email)
+					.userId(userId)
 					.build();
-			user = userRepository.save(newUser);
+
+			return userTokenResponse;
 		}
-
-		// jwt 토큰 발행
-		Token token = jwtTokenUtil.generateToken(user.getUserId(), user.getRole());
-		Long userId = user.getUserId();
-
-		UserTokenResponse userTokenResponse = UserTokenResponse.builder()
-				.token(token)
-				.needRegister(needRegister)
-				.email(email)
-				.userId(userId)
-				.build();
-
-		return userTokenResponse;
+		return null;
 	}
 
 	@Override
-	public Boolean logout(Long userId) {
+	public UserTokenResponse reIssueToken(UserReIssueDto userReIssueDto) {
+		// access & refresh token 가져오기
+		String refreshToken = userReIssueDto.getRefreshToken();
+
+		Long userId = Long.parseLong(redisUtil.getValues(refreshToken));
+		Optional<User> savedUser = userRepository.findById(userId);
+		if(savedUser.isPresent()){
+			if(!jwtTokenUtil.checkExpiredToken(refreshToken)) {
+				// Token 재생성
+				Token newToken = jwtTokenUtil.generateToken(userId, savedUser.get().getRole());
+
+				// 기존 refresh Token 삭제
+				redisUtil.deleteValues(refreshToken);
+
+				// 새 refresh token redis 저장
+				Long newRefreshTokenExpiration = jwtTokenUtil.getTokenExpirationAsLong(newToken.getRefreshToken());
+				Duration expireDuration = Duration.ofMillis(newRefreshTokenExpiration);
+				redisUtil.setValueDuration(newToken.getRefreshToken(), Long.toString(userId), expireDuration);
+
+				UserTokenResponse userTokenResponse = UserTokenResponse.builder()
+						.token(newToken)
+						.userId(savedUser.get().getUserId())
+						.email(savedUser.get().getUserEmail())
+						.needRegister(false)
+						.build();
+
+				if (savedUser.get().getUserName() == null) {
+					userTokenResponse.setNeedRegister(true);
+				}
+
+				return userTokenResponse;
+			}
+
+		}
+		return null;
+	}
+
+	@Override
+	public Boolean logout(HttpServletRequest request, Long userId) {
 		Optional<User> user = userRepository.findById(userId);
 
 		String provider = user.get().getProvider();
@@ -174,6 +230,28 @@ public class UserServiceImp implements UserService {
 			}
 		}
 
+		// Access, Refresh token 처리
+		Boolean completeDel = deleteToken(request);
+		if (!completeDel) {
+			return false;
+		}
+		return true;
+	}
+
+	// 로그아웃 시 토큰 처리
+	private Boolean deleteToken(HttpServletRequest request) {
+		try {
+			String accessToken = request.getHeader("Authorization");
+
+			// access Token 블랙리스트 추가
+			Integer tokenExpiration = jwtTokenUtil.getTokenExpirationAsLong(accessToken).intValue();
+			Duration expireDuration = Duration.ofMillis(tokenExpiration);
+			redisUtil.setValueDuration(accessToken, "BlackList", expireDuration);
+
+		} catch (Exception e) {
+			log.error(String.valueOf(e));
+			return false;
+		}
 		return true;
 	}
 

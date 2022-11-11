@@ -2,6 +2,7 @@ package com.team6.onandthefarmmemberservice.service.seller;
 
 
 import com.team6.onandthefarmmemberservice.dto.seller.SellerDto;
+import com.team6.onandthefarmmemberservice.dto.seller.SellerReIssueDto;
 import com.team6.onandthefarmmemberservice.entity.admin.Admin;
 import com.team6.onandthefarmmemberservice.entity.seller.Seller;
 import com.team6.onandthefarmmemberservice.repository.AdminRepository;
@@ -9,21 +10,28 @@ import com.team6.onandthefarmmemberservice.repository.SellerRepository;
 import com.team6.onandthefarmmemberservice.security.jwt.JwtTokenUtil;
 import com.team6.onandthefarmmemberservice.security.jwt.Token;
 import com.team6.onandthefarmmemberservice.utils.DateUtils;
+import com.team6.onandthefarmmemberservice.utils.RedisUtil;
 import com.team6.onandthefarmmemberservice.utils.S3Upload;
 import com.team6.onandthefarmmemberservice.vo.seller.SellerInfoResponse;
 import com.team6.onandthefarmmemberservice.vo.seller.SellerLoginResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 
 @Service
 @Transactional
+@Slf4j
 public class SellerServiceImp implements SellerService{
+
+    private Long refreshPeriod;
 
     private final AdminRepository adminRepository;
 
@@ -37,6 +45,8 @@ public class SellerServiceImp implements SellerService{
 
     private final JwtTokenUtil jwtTokenUtil;
 
+    private final RedisUtil redisUtil;
+
     private Environment env;
 
 
@@ -47,6 +57,7 @@ public class SellerServiceImp implements SellerService{
                             DateUtils dateUtils,
                             Environment env,
                             JwtTokenUtil jwtTokenUtil,
+                            RedisUtil redisUtil,
                             S3Upload s3Upload) {
         this.adminRepository = adminRepository;
         this.sellerRepository = sellerRepository;
@@ -54,7 +65,10 @@ public class SellerServiceImp implements SellerService{
         this.dateUtils=dateUtils;
         this.env=env;
         this.jwtTokenUtil = jwtTokenUtil;
+        this.redisUtil = redisUtil;
         this.s3Upload=s3Upload;
+
+        refreshPeriod = Long.parseLong(env.getProperty("custom-api-key.jwt.refresh-token-period"));
     }
 
     /**
@@ -76,6 +90,10 @@ public class SellerServiceImp implements SellerService{
                 sellerLoginResponse.setToken(token);
                 sellerLoginResponse.setRole("admin");
 
+                // redis에 refresh token 저장
+                Duration expireDuration = Duration.ofMillis(refreshPeriod);
+                redisUtil.setValueDuration(token.getRefreshToken(), Long.toString(admin.get().getAdminId()), expireDuration);
+
                 return sellerLoginResponse;
             }
         }
@@ -86,10 +104,63 @@ public class SellerServiceImp implements SellerService{
                 Token token = jwtTokenUtil.generateToken(seller.get().getSellerId(), seller.get().getRole());
                 sellerLoginResponse.setToken(token);
                 sellerLoginResponse.setRole("seller");
+
+                // redis에 refresh token 저장
+                Duration expireDuration = Duration.ofMillis(refreshPeriod);
+                redisUtil.setValueDuration(token.getRefreshToken(), Long.toString(seller.get().getSellerId()), expireDuration);
             }
         }
 
         return sellerLoginResponse;
+    }
+
+    @Override
+    public SellerLoginResponse reIssueToken(SellerReIssueDto sellerReIssueDto) {
+        // access & refresh token 가져오기
+        String refreshToken = sellerReIssueDto.getRefreshToken();
+
+        Long sellerId = Long.parseLong(redisUtil.getValues(refreshToken));
+        Optional<Seller> savedSeller = sellerRepository.findById(sellerId);
+        if(savedSeller.isPresent()){
+            if(!jwtTokenUtil.checkExpiredToken(refreshToken)) {
+                // Token 재생성
+                Token newToken = jwtTokenUtil.generateToken(sellerId, savedSeller.get().getRole());
+
+                // 기존 refresh Token 삭제
+                redisUtil.deleteValues(refreshToken);
+
+                // 새 refresh token redis 저장
+                Long newRefreshTokenExpiration = jwtTokenUtil.getTokenExpirationAsLong(newToken.getRefreshToken());
+                Duration expireDuration = Duration.ofMillis(newRefreshTokenExpiration);
+                redisUtil.setValueDuration(newToken.getRefreshToken(), Long.toString(sellerId), expireDuration);
+
+                SellerLoginResponse sellerTokenResponse = SellerLoginResponse.builder()
+                        .token(newToken)
+                        .role(savedSeller.get().getRole())
+                        .build();
+
+                return sellerTokenResponse;
+            }
+
+        }
+        return null;
+    }
+
+    @Override
+    public Boolean logout(HttpServletRequest request) {
+        try {
+            String accessToken = request.getHeader("Authorization");
+
+            // access Token 블랙리스트 추가
+            Integer tokenExpiration = jwtTokenUtil.getTokenExpirationAsLong(accessToken).intValue();
+            Duration expireDuration = Duration.ofMillis(tokenExpiration);
+            redisUtil.setValueDuration(accessToken, "BlackList", expireDuration);
+
+        } catch (Exception e) {
+            log.error(String.valueOf(e));
+            return false;
+        }
+        return true;
     }
 
     @Override

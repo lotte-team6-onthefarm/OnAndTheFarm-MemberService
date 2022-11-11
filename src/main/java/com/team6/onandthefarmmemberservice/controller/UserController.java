@@ -4,13 +4,11 @@ import com.team6.onandthefarmmemberservice.dto.following.MemberFollowingDto;
 import com.team6.onandthefarmmemberservice.dto.following.MemberProfileDto;
 import com.team6.onandthefarmmemberservice.dto.user.UserInfoDto;
 import com.team6.onandthefarmmemberservice.dto.user.UserLoginDto;
+import com.team6.onandthefarmmemberservice.dto.user.UserReIssueDto;
 import com.team6.onandthefarmmemberservice.service.user.UserService;
 import com.team6.onandthefarmmemberservice.utils.BaseResponse;
 import com.team6.onandthefarmmemberservice.vo.following.*;
-import com.team6.onandthefarmmemberservice.vo.user.UserInfoRequest;
-import com.team6.onandthefarmmemberservice.vo.user.UserInfoResponse;
-import com.team6.onandthefarmmemberservice.vo.user.UserLoginRequest;
-import com.team6.onandthefarmmemberservice.vo.user.UserTokenResponse;
+import com.team6.onandthefarmmemberservice.vo.user.*;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -22,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +49,7 @@ public class UserController {
         UserTokenResponse userTokenResponse = userService.login(userLoginDto);
 
         BaseResponse response = null;
-        if (userTokenResponse.getToken() != null) {
+        if (userTokenResponse != null) {
             response = BaseResponse.builder().httpStatus(HttpStatus.OK).message("성공").data(userTokenResponse).build();
         } else {
             log.error("oauth 접근 토큰 발급 실패");
@@ -63,9 +62,36 @@ public class UserController {
         return new ResponseEntity(response, HttpStatus.OK);
     }
 
+    @PostMapping("/refresh")
+    @ApiOperation(value = "refresh 토큰으로 access 토큰 재발급")
+    public ResponseEntity<BaseResponse<UserTokenResponse>> refresh(@RequestBody UserReIssueRequest userReIssueRequest){
+
+        UserReIssueDto userReIssueDto = new UserReIssueDto();
+        userReIssueDto.setAccessToken(userReIssueRequest.getAccessToken());
+        userReIssueDto.setRefreshToken(userReIssueRequest.getRefreshToken());
+
+        UserTokenResponse userTokenResponse = userService.reIssueToken(userReIssueDto);
+
+        if(userTokenResponse == null){
+            BaseResponse response = BaseResponse.builder()
+                    .httpStatus(HttpStatus.BAD_REQUEST)
+                    .message("실패")
+                    .build();
+
+            return new ResponseEntity(response,HttpStatus.BAD_REQUEST);
+        }
+
+        BaseResponse response = BaseResponse.builder()
+                .httpStatus(HttpStatus.OK)
+                .message("성공")
+                .data(userTokenResponse)
+                .build();
+        return new ResponseEntity(response, HttpStatus.OK);
+    }
+
     @GetMapping("/logout")
     @ApiOperation(value = "유저 로그아웃")
-    public ResponseEntity<BaseResponse> logout(@ApiIgnore Principal principal) {
+    public ResponseEntity<BaseResponse> logout(@ApiIgnore Principal principal, HttpServletRequest request) {
 
         if(principal == null){
             BaseResponse baseResponse = BaseResponse.builder()
@@ -78,9 +104,20 @@ public class UserController {
         String[] principalInfo = principal.getName().split(" ");
         Long userId = Long.parseLong(principalInfo[0]);
 
-        userService.logout(userId);
+        Boolean logoutStatus = userService.logout(request, userId);
 
-        BaseResponse response = BaseResponse.builder().httpStatus(HttpStatus.OK).message("성공").build();
+        if(!logoutStatus){
+            BaseResponse response = BaseResponse.builder()
+                    .httpStatus(HttpStatus.BAD_REQUEST)
+                    .message("실패")
+                    .build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+        BaseResponse response = BaseResponse.builder()
+                .httpStatus(HttpStatus.OK)
+                .message("성공")
+                .build();
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
