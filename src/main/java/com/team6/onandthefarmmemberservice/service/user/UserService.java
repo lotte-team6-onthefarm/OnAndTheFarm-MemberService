@@ -4,6 +4,7 @@ import com.team6.onandthefarmmemberservice.dto.following.MemberFollowingDto;
 import com.team6.onandthefarmmemberservice.dto.following.MemberProfileDto;
 import com.team6.onandthefarmmemberservice.dto.user.UserInfoDto;
 import com.team6.onandthefarmmemberservice.dto.user.UserLoginDto;
+import com.team6.onandthefarmmemberservice.dto.user.UserReIssueDto;
 import com.team6.onandthefarmmemberservice.security.jwt.Token;
 import com.team6.onandthefarmmemberservice.vo.following.*;
 import com.team6.onandthefarmmemberservice.vo.user.*;
@@ -16,7 +17,9 @@ public interface UserService {
 
     UserTokenResponse login(UserLoginDto userLoginDto);
 
-    Boolean logout(Long userId);
+    UserTokenResponse reIssueToken(UserReIssueDto userReIssueDto);
+
+    Boolean logout(HttpServletRequest request, Long userId);
 
     Boolean loginPhoneConfirm(String phone);
 

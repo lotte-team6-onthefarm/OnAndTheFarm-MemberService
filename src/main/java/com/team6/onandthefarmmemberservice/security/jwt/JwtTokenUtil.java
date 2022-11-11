@@ -18,6 +18,10 @@ public class JwtTokenUtil {
 
     private final Key secretKey;
 
+    private Long tokenPeriod; //60분*24시간=1440분, 86400000 = 1000L * 60L * 1440L
+
+    private Long refreshPeriod; //7,776,000,000 = 1000L * 60L * 60L * 24L * 30L * 3L
+
     public static final String TOKEN_PREFIX = "Bearer ";
 
     Environment env;
@@ -28,6 +32,8 @@ public class JwtTokenUtil {
         this.env = env;
 
         String secretKey = env.getProperty("custom-api-key.jwt.secret");
+        tokenPeriod = Long.parseLong(env.getProperty("custom-api-key.jwt.token-period"));
+        refreshPeriod = Long.parseLong(env.getProperty("custom-api-key.jwt.refresh-token-period"));
 
         // secretKey 바이트로 변환하여 Base64로 인코딩
         String encodingSecretKey = Base64.getEncoder().encodeToString(secretKey.getBytes(StandardCharsets.UTF_8));
@@ -38,9 +44,6 @@ public class JwtTokenUtil {
     }
 
     public Token generateToken(Long id, String role) {
-        long tokenPeriod = 1000L * 60L * 1440L; //5분
-        long refreshPeriod = 1000L * 60L * 60L * 24L * 30L * 3L;
-
         Claims claims = Jwts.claims();
         claims.put("role", role);
         claims.put("id", id);
@@ -72,10 +75,19 @@ public class JwtTokenUtil {
                 .getBody();
     }
 
-    //토큰 만료되었는지 확인
+    // 토큰 만료되었는지 확인
     public boolean checkExpiredToken(String token) {
         final Date expiration = extractAllClaims(token).getExpiration();
         return expiration.before(new Date());
+    }
+
+    // 토큰 만료 시간 가져오기
+    public Long getTokenExpirationAsLong(String token) {
+        // 남은 유효시간
+        Date expiration = extractAllClaims(token).getExpiration();
+        // 현재 시간
+        Long now = new Date().getTime();
+        return (expiration.getTime() - now);
     }
 
     //UserId 가져오기
@@ -83,10 +95,12 @@ public class JwtTokenUtil {
         return extractAllClaims(token).get("id", Long.class);
     }
 
+    // Role 가져오기
     public String getRole(String token){
         return extractAllClaims(token).get("role", String.class);
     }
 
+    // token 유효성 확인
     public Boolean validateToken(String token) {
         String tokenDelPrefix = token.replace(TOKEN_PREFIX, "");
 

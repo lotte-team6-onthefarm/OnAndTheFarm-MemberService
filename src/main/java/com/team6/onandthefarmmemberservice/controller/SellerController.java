@@ -2,6 +2,7 @@ package com.team6.onandthefarmmemberservice.controller;
 
 import com.team6.onandthefarmmemberservice.dto.seller.EmailDto;
 import com.team6.onandthefarmmemberservice.dto.seller.SellerDto;
+import com.team6.onandthefarmmemberservice.dto.seller.SellerReIssueDto;
 import com.team6.onandthefarmmemberservice.security.jwt.Token;
 import com.team6.onandthefarmmemberservice.service.seller.MailService;
 import com.team6.onandthefarmmemberservice.service.seller.SellerService;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
@@ -128,6 +130,63 @@ public class SellerController {
 
             return new ResponseEntity(response,HttpStatus.BAD_REQUEST);
         }
+
+        return new ResponseEntity(response,HttpStatus.OK);
+    }
+
+    @PostMapping("/refresh")
+    @ApiOperation(value = "refresh 토큰으로 access 토큰 재발급")
+    public ResponseEntity<BaseResponse<SellerLoginResponse>> refresh(@RequestBody SellerReIssueRequest sellerReIssueRequest){
+
+        SellerReIssueDto sellerReIssueDto = new SellerReIssueDto();
+        sellerReIssueDto.setAccessToken(sellerReIssueRequest.getAccessToken());
+        sellerReIssueDto.setRefreshToken(sellerReIssueRequest.getRefreshToken());
+
+        SellerLoginResponse sellerLoginResponse = sellerService.reIssueToken(sellerReIssueDto);
+
+        if(sellerLoginResponse == null){
+            BaseResponse response = BaseResponse.builder()
+                    .httpStatus(HttpStatus.BAD_REQUEST)
+                    .message("실패")
+                    .build();
+
+            return new ResponseEntity(response,HttpStatus.BAD_REQUEST);
+        }
+
+        BaseResponse response = BaseResponse.builder()
+                .httpStatus(HttpStatus.OK)
+                .message("성공")
+                .data(sellerLoginResponse)
+                .build();
+        return new ResponseEntity(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/logout")
+    @ApiOperation(value = "셀러 로그아웃")
+    public ResponseEntity<BaseResponse> logout(@ApiIgnore Principal principal, HttpServletRequest request){
+
+        if(principal == null){
+            BaseResponse baseResponse = BaseResponse.builder()
+                    .httpStatus(HttpStatus.FORBIDDEN)
+                    .message("no authorization")
+                    .build();
+            return new ResponseEntity(baseResponse, HttpStatus.BAD_REQUEST);
+        }
+
+        Boolean logoutStatus = sellerService.logout(request);
+
+        if(!logoutStatus){
+            BaseResponse response = BaseResponse.builder()
+                    .httpStatus(HttpStatus.BAD_REQUEST)
+                    .message("실패")
+                    .build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+        BaseResponse response = BaseResponse.builder()
+                .httpStatus(HttpStatus.OK)
+                .message("성공")
+                .build();
 
         return new ResponseEntity(response,HttpStatus.OK);
     }

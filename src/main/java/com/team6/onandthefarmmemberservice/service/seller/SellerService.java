@@ -1,9 +1,11 @@
 package com.team6.onandthefarmmemberservice.service.seller;
 
 import com.team6.onandthefarmmemberservice.dto.seller.SellerDto;
+import com.team6.onandthefarmmemberservice.dto.seller.SellerReIssueDto;
 import com.team6.onandthefarmmemberservice.vo.seller.SellerInfoResponse;
 import com.team6.onandthefarmmemberservice.vo.seller.SellerLoginResponse;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 public interface SellerService {
@@ -19,6 +21,10 @@ public interface SellerService {
     boolean sellerIdCheck(String sellerEmail);
 
     SellerLoginResponse login(SellerDto sellerDto);
+
+    SellerLoginResponse reIssueToken(SellerReIssueDto sellerReIssueDto);
+
+    Boolean logout(HttpServletRequest request);
 
     String searchSellerId(String name, String phone);
 

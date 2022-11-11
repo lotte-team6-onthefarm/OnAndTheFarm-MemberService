@@ -123,26 +123,4 @@ public class KakaoOAuth2 {
 		return resKakaoId;
 	}
 
-	public Long unlinkUser(Long userKakaoNumber) {
-		HttpHeaders headers = new HttpHeaders();
-		headers.add("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
-		headers.add("Authorization", "KakaoAK " + adminKey);
-
-		// HttpBody 오브젝트 생성
-		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-		params.add("target_id", String.valueOf(userKakaoNumber));
-		params.add("target_id_type", "user_id");
-
-		// HttpHeader와 HttpBody를 하나의 오브젝트에 담기
-		RestTemplate rt = new RestTemplate();
-		HttpEntity<MultiValueMap<String, String>> kakaoAKRequest = new HttpEntity<>(params, headers);
-		ResponseEntity<String> response = rt.exchange("https://kapi.kakao.com/v1/user/unlink", HttpMethod.POST, kakaoAKRequest, String.class);
-
-		// 응답받은 id값 추출
-		JSONObject body = new JSONObject(response.getBody());
-		Long resKakaoId = body.getLong("id");
-
-		return resKakaoId;
-	}
-
 }

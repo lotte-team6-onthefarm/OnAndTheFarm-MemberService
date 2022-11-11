@@ -67,6 +67,9 @@ dependencies {
 	//json
 	implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.3'
 	implementation group: 'org.json', name: 'json', version: '20210307'
+
+	//redis
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
 dependencyManagement {

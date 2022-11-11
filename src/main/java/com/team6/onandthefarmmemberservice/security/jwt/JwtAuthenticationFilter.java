@@ -1,5 +1,6 @@
 package com.team6.onandthefarmmemberservice.security.jwt;
 
+import com.team6.onandthefarmmemberservice.utils.RedisUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -20,11 +21,13 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String adminKey;
-
+    private final RedisUtil redisUtil;
     Environment env;
 
     @Autowired
-    public JwtAuthenticationFilter(Environment env) {
+    public JwtAuthenticationFilter(RedisUtil redisUtil,
+                                   Environment env) {
+        this.redisUtil = redisUtil;
         this.env = env;
         this.adminKey = env.getProperty("custom-api-key.jwt.admin-key");
     }
