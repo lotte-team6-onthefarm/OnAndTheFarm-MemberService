@@ -12,7 +12,7 @@ public interface MemberServiceClientService {
 
     FollowingVo findByFollowingMemberIdAndFollowerMemberId(Long followingMemberId, Long followerMemberId);
 
-    ReservedPoint reservedPoint(String memberId, String orderSerial);
+    ReservedPoint reservedPoint(String feedId, String orderSerial);
 
     Boolean confirmOrder(Long id);
 

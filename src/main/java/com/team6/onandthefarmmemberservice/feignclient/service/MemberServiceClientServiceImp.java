@@ -7,6 +7,7 @@ import com.team6.onandthefarmmemberservice.entity.following.Following;
 import com.team6.onandthefarmmemberservice.entity.seller.Seller;
 import com.team6.onandthefarmmemberservice.entity.user.ReservedPoint;
 import com.team6.onandthefarmmemberservice.entity.user.User;
+import com.team6.onandthefarmmemberservice.feignclient.SnsServiceClient;
 import com.team6.onandthefarmmemberservice.feignclient.vo.*;
 import com.team6.onandthefarmmemberservice.kafka.PointOrderChannelAdapter;
 import com.team6.onandthefarmmemberservice.repository.FollowingRepository;
@@ -42,6 +43,8 @@ public class MemberServiceClientServiceImp implements MemberServiceClientService
     private final ReservedPointRepository reservedPointRepository;
 
     private final PointOrderChannelAdapter pointOrderChannelAdapter;
+
+    private final SnsServiceClient snsServiceClient;
 
     public UserVo findByUserId(Long userId){
         ModelMapper modelMapper = new ModelMapper();
@@ -92,11 +95,14 @@ public class MemberServiceClientServiceImp implements MemberServiceClientService
 
     /**
      * 포인트 예약 테이블에 주문 정보를 db에 저장하는 메서드(try)
-     * @param memberId 포인트 받을 멤버의 ID
+     * @param feedNumber 피드 serial number
      * @return
      */
     @Override
-    public ReservedPoint reservedPoint(String memberId, String orderSerial) {
+    public ReservedPoint reservedPoint(String feedNumber, String orderSerial) {
+        String memberId = "";
+        // feedId를 이용해서 memberId 가져오기
+        memberId = String.valueOf(snsServiceClient.findByFeedNumber(Long.valueOf(feedNumber)).getMemberId());
         ReservedPoint reservedPoint = ReservedPoint.builder()
                 .memberId(memberId)
                 .orderSerial(orderSerial)

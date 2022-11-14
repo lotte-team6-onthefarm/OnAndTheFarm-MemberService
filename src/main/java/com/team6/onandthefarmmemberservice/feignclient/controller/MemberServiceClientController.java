@@ -60,14 +60,14 @@ public class MemberServiceClientController {
      */
     @PostMapping("/api/feign/user/members/member-service/member-try")
     public ResponseEntity<ParticipantLink> orderTry(@RequestBody Map<String, Object> map){
-        String memberId = "";
+        String feedNumber = "";
         String orderSerial = "";
 
         ObjectMapper objectMapper = new ObjectMapper();
         try{
             // 상품들의 정보를 직렬화
-            memberId = objectMapper.writeValueAsString(map.get("memberId"));
-            memberId = memberId.substring(1,memberId.length()-1);
+            feedNumber = objectMapper.writeValueAsString(map.get("feedNumber"));
+            feedNumber = feedNumber.substring(1,feedNumber.length()-1);
             orderSerial = objectMapper.writeValueAsString(map.get("orderSerial"));
             orderSerial = orderSerial.substring(1,orderSerial.length()-1);
         } catch (JsonProcessingException e) {
@@ -75,7 +75,7 @@ public class MemberServiceClientController {
             return new ResponseEntity(HttpStatus.BAD_REQUEST);
         }
         // 포인트 예약 테이블에 예약 저장
-        ReservedPoint reservedPoint = memberServiceClientService.reservedPoint(memberId,orderSerial);
+        ReservedPoint reservedPoint = memberServiceClientService.reservedPoint(feedNumber,orderSerial);
 
         final ParticipantLink participantLink = buildParticipantLink(
                 reservedPoint.getReservedPointId(),
