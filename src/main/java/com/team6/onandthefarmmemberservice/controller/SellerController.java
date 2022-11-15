@@ -161,7 +161,7 @@ public class SellerController {
         return new ResponseEntity(response, HttpStatus.OK);
     }
 
-    @GetMapping("/logout")
+    @PutMapping("/logout")
     @ApiOperation(value = "셀러 로그아웃")
     public ResponseEntity<BaseResponse> logout(@ApiIgnore Principal principal, HttpServletRequest request){
 
