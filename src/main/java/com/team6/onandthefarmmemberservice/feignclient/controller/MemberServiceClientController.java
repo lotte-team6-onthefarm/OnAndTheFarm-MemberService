@@ -120,4 +120,9 @@ public class MemberServiceClientController {
         memberServiceClientService.cancelOrder(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+    @PostMapping("/api/feign/user/members/member-service/share/point")
+    Boolean updateUserPoint(@RequestBody UserIdVo userIdVo){
+        return memberServiceClientService.updateUserPoint(userIdVo.getUserId());
+    }
 }

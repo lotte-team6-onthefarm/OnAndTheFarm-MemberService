@@ -165,4 +165,16 @@ public class MemberServiceClientServiceImp implements MemberServiceClientService
 
         return followingVoList;
     }
+
+    @Override
+    public Boolean updateUserPoint(Long userId) {
+        Optional<User> savedUser = userRepository.findById(userId);
+        if(savedUser.isPresent()){
+            User user = savedUser.get();
+            user.setUserPoint(user.getUserPoint()+1);
+
+            return true;
+        }
+        return false;
+    }
 }

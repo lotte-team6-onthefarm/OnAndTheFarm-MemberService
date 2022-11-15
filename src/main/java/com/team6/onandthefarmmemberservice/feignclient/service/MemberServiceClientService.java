@@ -19,4 +19,6 @@ public interface MemberServiceClientService {
     void cancelOrder(Long id);
 
     List<FollowingVo> findByFollowingMemberId(Long memberId);
+
+    Boolean updateUserPoint(Long userId);
 }
