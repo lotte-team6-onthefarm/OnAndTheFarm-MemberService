@@ -154,6 +154,7 @@ public class UserServiceImp implements UserService {
 						.userProfileImg("https://lotte-06-s3-test.s3.ap-northeast-2.amazonaws.com/profile/user/basic_profile.png")
 						.userRegisterDate(dateUtils.transDate(env.getProperty("dateutils.format")))
 						.userIsActivated(true)
+						.userPoint(0)
 						.build();
 				user = userRepository.save(newUser);
 			}
