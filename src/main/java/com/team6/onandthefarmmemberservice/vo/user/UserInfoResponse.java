@@ -28,4 +28,6 @@ public class UserInfoResponse {
 
     private String userProfileImg;
 
+    private Integer userPoint;
+
 }
