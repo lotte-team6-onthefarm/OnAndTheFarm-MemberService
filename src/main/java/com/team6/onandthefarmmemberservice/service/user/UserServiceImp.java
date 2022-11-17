@@ -268,11 +268,6 @@ public class UserServiceImp implements UserService {
 	}
 
 	@Override
-	public Token reIssueToken(String refreshToken, HttpServletRequest request, HttpServletResponse response) {
-		return null;
-	}
-
-	@Override
 	public Long updateUserInfo(UserInfoDto userInfoDto) throws IOException {
 		Optional<User> user = userRepository.findById(userInfoDto.getUserId());
 
