@@ -23,8 +23,6 @@ public interface UserService {
 
     Boolean loginPhoneConfirm(String phone);
 
-    Token reIssueToken(String refreshToken, HttpServletRequest request, HttpServletResponse response);
-
     Long updateUserInfo(UserInfoDto userInfoDto) throws IOException;
 
     UserInfoResponse findUserInfo(Long userId);
