@@ -21,12 +21,15 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String adminKey;
+    private final JwtTokenUtil jwtTokenUtil;
     private final RedisUtil redisUtil;
     Environment env;
 
     @Autowired
-    public JwtAuthenticationFilter(RedisUtil redisUtil,
+    public JwtAuthenticationFilter(JwtTokenUtil jwtTokenUtil,
+                                   RedisUtil redisUtil,
                                    Environment env) {
+        this.jwtTokenUtil = jwtTokenUtil;
         this.redisUtil = redisUtil;
         this.env = env;
         this.adminKey = env.getProperty("custom-api-key.jwt.admin-key");
@@ -34,26 +37,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String memberId = request.getHeader("memberId");
-        String memberRole = request.getHeader("memberRole");
+        String accessToken = request.getHeader("Authorization");
 
-        // 식별된 정상 유저인 경우, 요청 context 내에서 참조 가능한 인증 정보(jwtAuthentication) 생성
-        UsernamePasswordAuthenticationToken jwtAuthentication = null;
-        if(memberId != null) {
-            if (memberRole.equals("user")) {
-                jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
-                        memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_USER"));
-            } else if(memberRole.equals("seller")){
-                jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
-                        memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_SELLER"));
-            } else {
-                jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
-                        memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_ADMIN"));
+        if(accessToken != null) {
+            Long memberId = jwtTokenUtil.getId(accessToken);
+            String memberRole = jwtTokenUtil.getRole(accessToken);
+
+            // 식별된 정상 유저인 경우, 요청 context 내에서 참조 가능한 인증 정보(jwtAuthentication) 생성
+            UsernamePasswordAuthenticationToken jwtAuthentication = null;
+            if (memberId != null) {
+                if (memberRole.equals("ROLE_USER")) {
+                    jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
+                            memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_USER"));
+                } else if (memberRole.equals("ROLE_SELLER")) {
+                    jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
+                            memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_SELLER"));
+                } else {
+                    jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
+                            memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_ADMIN"));
+                }
             }
-        }
 
-        // jwt 토큰으로 부터 획득한 인증 정보(authentication) 설정
-        SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
+            // jwt 토큰으로 부터 획득한 인증 정보(authentication) 설정
+            SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
+        }
 
         filterChain.doFilter(request, response);
     }
