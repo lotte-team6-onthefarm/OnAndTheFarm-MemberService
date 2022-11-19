@@ -181,7 +181,7 @@ public class UserServiceImp implements UserService {
 
 	@Override
 	public UserTokenResponse reIssueToken(UserReIssueDto userReIssueDto) {
-		// access & refresh token 가져오기
+		// refresh token 가져오기
 		String refreshToken = userReIssueDto.getRefreshToken();
 
 		Long userId = Long.parseLong(redisUtil.getValues(refreshToken));
@@ -219,23 +219,20 @@ public class UserServiceImp implements UserService {
 
 	@Override
 	public Boolean logout(HttpServletRequest request, Long userId) {
-		Optional<User> user = userRepository.findById(userId);
-
-		String provider = user.get().getProvider();
-
-		if(provider.equals("kakao")) {
-			Long kakaoNumber = Long.parseLong(user.get().getUserOauthNumber());
-			Long returnKakaoNumber = kakaoOAuth2.logout(kakaoNumber);
-			if (returnKakaoNumber == null) {
-				return false;
-			}
-		}
-
 		// Access, Refresh token 처리
 		Boolean completeDel = deleteToken(request);
 		if (!completeDel) {
 			return false;
 		}
+
+		Optional<User> user = userRepository.findById(userId);
+
+		String provider = user.get().getProvider();
+		if(provider.equals("kakao")) {
+			Long kakaoNumber = Long.parseLong(user.get().getUserOauthNumber());
+			kakaoOAuth2.logout(kakaoNumber);
+		}
+
 		return true;
 	}
 
@@ -243,6 +240,10 @@ public class UserServiceImp implements UserService {
 	private Boolean deleteToken(HttpServletRequest request) {
 		try {
 			String accessToken = request.getHeader("Authorization");
+			String refreshToken = request.getHeader("refresh");
+
+			// 기존의 refresh Token을 삭제 -> 해당 refresh Token으로 토큰 재발행하지 못하도록
+			redisUtil.deleteValues(refreshToken);
 
 			// access Token 블랙리스트 추가
 			Integer tokenExpiration = jwtTokenUtil.getTokenExpirationAsLong(accessToken).intValue();

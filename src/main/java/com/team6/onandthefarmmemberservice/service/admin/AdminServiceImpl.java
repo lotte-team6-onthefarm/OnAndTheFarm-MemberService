@@ -70,6 +70,10 @@ public class AdminServiceImpl implements AdminService{
     public Boolean logout(HttpServletRequest request) {
         try {
             String accessToken = request.getHeader("Authorization");
+            String refreshToken = request.getHeader("refresh");
+
+            // 기존의 refresh Token을 삭제 -> 해당 refresh Token으로 토큰 재발행하지 못하도록
+            redisUtil.deleteValues(refreshToken);
 
             // access Token 블랙리스트 추가
             Integer tokenExpiration = jwtTokenUtil.getTokenExpirationAsLong(accessToken).intValue();
