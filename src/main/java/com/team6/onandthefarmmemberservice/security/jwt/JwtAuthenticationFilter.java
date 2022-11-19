@@ -47,13 +47,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UsernamePasswordAuthenticationToken jwtAuthentication = null;
             if (memberId != null) {
                 if (memberRole.equals("ROLE_USER")) {
-                    jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
+                    jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " user",
                             memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_USER"));
                 } else if (memberRole.equals("ROLE_SELLER")) {
-                    jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
+                    jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " seller",
                             memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_SELLER"));
                 } else {
-                    jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " " + memberRole,
+                    jwtAuthentication = new UsernamePasswordAuthenticationToken(memberId + " admin",
                             memberId + adminKey, AuthorityUtils.createAuthorityList("ROLE_ADMIN"));
                 }
             }
